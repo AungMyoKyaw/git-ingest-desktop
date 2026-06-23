@@ -1,0 +1,71 @@
+{
+  "name": "@git-ingest/desktop",
+  "version": "0.1.0",
+  "description": "Secure Electron desktop app for Git-Ingest",
+  "author": "Aung Myo Kyaw",
+  "type": "module",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "package": "electron-vite build && electron-builder --mac dmg zip",
+    "test": "vitest run src/main/validators.test.ts src/main/file-actions.test.ts src/renderer/src/drop.test.ts",
+    "test:smoke": "bun run build && vitest run src/smoke/launch.test.ts"
+  },
+  "dependencies": {
+    "@git-ingest/core": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.2",
+    "electron": "^35.5.1",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^3.1.0",
+    "playwright": "^1.58.2",
+    "vite": "^6.3.5"
+  },
+  "build": {
+    "appId": "com.aungmyokyaw.git-ingest",
+    "productName": "Git-Ingest",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "out/main/index.js"
+    },
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "icon": "build/icons/icon.icns",
+    "mac": {
+      "icon": "build/icons/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "build/icons/icon-512.png",
+      "category": "Development"
+    }
+  }
+}

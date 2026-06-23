@@ -1,0 +1,18 @@
+{
+  "name": "@git-ingest/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "git-ingest": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@git-ingest/core": "workspace:*",
+    "clipboardy": "^4.0.0"
+  }
+}

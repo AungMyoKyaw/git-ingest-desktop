@@ -1,0 +1,32 @@
+{
+  "name": "git-ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12.0",
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "dev": "bun run dev:desktop",
+    "build": "bun run --filter @git-ingest/core build && bun run --filter @git-ingest/cli build && bun run --filter @git-ingest/desktop build",
+    "test": "bun run --filter @git-ingest/core test && bun run --filter @git-ingest/cli test && bun run --filter @git-ingest/desktop test",
+    "test:smoke": "bun run --filter @git-ingest/desktop test:smoke",
+    "dev:desktop": "bun run --filter @git-ingest/desktop dev",
+    "build:desktop": "bun run --filter @git-ingest/desktop build",
+    "package:desktop": "bun run --filter @git-ingest/desktop package",
+    "ci:test": "bun run test && bun run test:smoke && bun run build",
+    "ci:package:desktop": "bun run package:desktop",
+    "build:cli": "bun run --filter @git-ingest/cli build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
