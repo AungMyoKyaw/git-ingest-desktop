@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 
 import { registerIpcHandlers } from './ipc.js'
+import { createBrowserWindowWebPreferences } from './paths.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const appIconPath = path.join(currentDir, '../../build/icons/icon.png')
@@ -26,13 +27,7 @@ function createMainWindow() {
     show: false,
     backgroundColor: '#09111f',
     icon: appIconPath,
-    webPreferences: {
-      preload: path.join(currentDir, '../preload/index.js'),
-      contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false,
-      webSecurity: true
-    }
+    webPreferences: createBrowserWindowWebPreferences(currentDir)
   })
 
   window.webContents.on('will-navigate', (event, url) => {

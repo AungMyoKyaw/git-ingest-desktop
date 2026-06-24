@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const desktopRoot = path.resolve(currentDir, '../..')
 
 describe('desktop smoke test', () => {
-  it('launches the app and shows the main window title', async () => {
+  it('launches the app and renders the main screen', async () => {
     const electronApp = await electron.launch({
       args: [desktopRoot],
       cwd: desktopRoot,
@@ -20,7 +20,7 @@ describe('desktop smoke test', () => {
 
     try {
       const window = await electronApp.firstWindow()
-      await expect(window.title()).resolves.toBe('Git-Ingest')
+      await expect(window.locator('h1').textContent()).resolves.toBe('Git-Ingest')
     } finally {
       await electronApp.close()
     }

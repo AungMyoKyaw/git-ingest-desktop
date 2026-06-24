@@ -9,7 +9,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "package": "electron-vite build && electron-builder --mac dmg zip",
-    "test": "vitest run src/main/validators.test.ts src/main/file-actions.test.ts src/renderer/src/drop.test.ts",
+    "test": "vitest run src/main/validators.test.ts src/main/file-actions.test.ts src/main/paths.test.ts src/renderer/src/drop.test.ts",
     "test:smoke": "bun run build && vitest run src/smoke/launch.test.ts"
   },
   "dependencies": {

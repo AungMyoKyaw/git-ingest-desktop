@@ -1,8 +1,46 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Package managers
+bun.lockb
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs
+*.log
+logs/
+
+# Runtime / env
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# Tests
+coverage/
+
+# Build outputs
 dist/
 out/
-.DS_Store
-coverage/
-*.log
+build/
+release/
+
+# Vite / Electron
+.vite/
 packages/desktop/release/
-packages/desktop/.vite/
+packages/desktop/out/
