@@ -12,6 +12,7 @@ export interface PreviewResult {
   skippedFiles: Array<{ relativePath: string; reason: string }>
   ignoredDirectories: Array<{ path: string; reason: string }>
   fileTypes: Array<{ label: string; count: number; percentage: number }>
+  estimatedTokenCount: number
   estimatedOutputBytes: number
   warnings: string[]
 }
