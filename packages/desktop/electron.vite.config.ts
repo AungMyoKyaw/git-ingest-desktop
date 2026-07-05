@@ -14,6 +14,11 @@ export default defineConfig({
       alias: {
         '@git-ingest/core': coreEntry
       }
+    },
+    build: {
+      externalizeDeps: {
+        exclude: ['@git-ingest/core']
+      }
     }
   },
   preload: {},
