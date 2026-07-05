@@ -50,6 +50,7 @@ export interface ProjectSummary {
   skippedFiles: SkippedFile[]
   ignoredDirectories: IgnoredDirectory[]
   fileTypes: FileTypeSummary[]
+  estimatedTokenCount: number
   estimatedOutputBytes: number
   warnings: string[]
 }

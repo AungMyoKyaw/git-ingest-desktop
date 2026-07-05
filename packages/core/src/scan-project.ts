@@ -109,6 +109,10 @@ function estimateOutputBytes(files: IncludedFile[]) {
   return files.reduce((total, file) => total + file.size + file.relativePath.length + 48, 512)
 }
 
+function estimateOutputTokens(estimatedOutputBytes: number) {
+  return Math.max(1, Math.ceil(estimatedOutputBytes / 4))
+}
+
 async function countFiles(directory: string): Promise<number> {
   const entries = await readdir(directory, { withFileTypes: true })
   let total = 0
@@ -246,6 +250,7 @@ async function collectProject(options: ScanProjectOptions | LegacyScanProjectOpt
     skippedFiles,
     ignoredDirectories,
     fileTypes: summarizeFileTypes(includedFiles),
+    estimatedTokenCount: estimateOutputTokens(estimatedOutputBytes),
     estimatedOutputBytes,
     warnings: buildWarnings(totalFiles, estimatedOutputBytes)
   }
