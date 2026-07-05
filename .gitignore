@@ -44,3 +44,6 @@ release/
 .vite/
 packages/desktop/release/
 packages/desktop/out/
+
+# Local worktrees
+.worktrees/
