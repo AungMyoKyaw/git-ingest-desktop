@@ -4,7 +4,7 @@ Date: 2026-07-05
 
 ## Context
 
-Git-Ingest is a local-first desktop utility that turns a selected project folder into AI-readable markdown or text. The existing Electron app already has the important production behavior: secure preload/main IPC, folder selection, drag-and-drop, preview, generation, cancellation, copy, save, open, reveal, recent project persistence, and settings persistence.
+Git-Ingest is a local-first desktop utility that turns a selected project folder into AI-readable markdown or text. The existing Electron app already has the important production behavior: secure preload/main IPC, folder selection, drag-and-drop, preview, generation, cancellation, copy, save, open, reveal, recent project persistence, settings hydration, and generation-time settings persistence.
 
 The target UI direction is the downloaded reference project at `/Users/aungmyokyaw/Downloads/git-ingest-light-native-desktop-ui`. That reference uses a light native desktop layout with app chrome, sidebar, central workspace, right inspector, and bottom status bar. This rewrite will adapt that structure into the existing Electron app while keeping the real behavior and security boundaries.
 
@@ -24,6 +24,19 @@ The target UI direction is the downloaded reference project at `/Users/aungmyoky
 - Do not ship fake templates or large placeholder product areas.
 - Do not add a landing page or marketing surface.
 - Do not change CLI behavior.
+
+## Current Documentation And Dependency Policy
+
+Implementation must use current documentation and registry data rather than stale package assumptions. Before changing package manifests, re-check package latest versions and relevant migration notes with Context7 or the package's primary documentation.
+
+Current checks on 2026-07-05 found:
+
+- Context7 Vite docs: Vite 7 requires Node.js 20.19+ or 22.12+. The repo already requires Node.js `>=22.12.0`, so modern Vite versions are compatible with the existing engine floor.
+- Context7 Electron docs: keep Electron current, preserve `contextBridge`, expose only narrow preload APIs, and never expose raw `ipcRenderer` to the renderer.
+- Context7 Tailwind CSS docs: Tailwind CSS 4 uses the first-party `@tailwindcss/vite` plugin and CSS `@import "tailwindcss";`.
+- Registry latest versions found during review: React `19.2.7`, React DOM `19.2.7`, Vite `8.1.3`, `@vitejs/plugin-react` `6.0.3`, Electron `43.0.0`, electron-vite `5.0.0`, electron-builder `26.15.3`, Playwright `1.61.1`, TypeScript `6.0.3`, Vitest `4.1.9`, `@types/node` `26.1.0`, `@types/react` `19.2.17`, `@types/react-dom` `19.2.3`, `minimatch` `10.2.5`, and `clipboardy` `5.3.1`.
+
+The implementation plan should include a dependency modernization task that updates all workspace manifests to current compatible versions, adds Tailwind CSS 4 and `@tailwindcss/vite` if the rewrite uses Tailwind utilities, refreshes `bun.lock`, and verifies the whole workspace. If a latest major version fails because of a documented incompatibility, record the exact blocker and use the newest compatible version.
 
 ## Recommended Approach
 
@@ -75,7 +88,7 @@ Advanced rules should move out of the page-length expanded form and into a focus
 - Max file size in MB.
 - Include patterns.
 - Exclude patterns.
-- Persisted advanced open/closed state if it still maps cleanly to the new sheet behavior.
+- Advanced sheet open/closed state as renderer UI state. Do not require durable persistence for this toggle unless a narrow settings-persistence IPC is intentionally added during implementation.
 
 Rules changes should trigger the existing auto-preview behavior after hydration. Stale output should clear when selected project or rules change.
 
