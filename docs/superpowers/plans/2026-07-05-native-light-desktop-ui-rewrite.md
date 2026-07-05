@@ -167,11 +167,13 @@ export default defineConfig({
 Run:
 
 ```bash
-bun test
+bun run --filter @git-ingest/core test
+bun run --filter @git-ingest/cli test
+bun run --filter @git-ingest/desktop test
 bun run build:desktop
 ```
 
-Expected: both commands pass. If TypeScript 6 or toolchain upgrades produce type errors unrelated to the renderer rewrite, fix only the minimal compatibility issues needed to restore the baseline.
+Expected: unit tests and desktop build pass. Do not use root `bun test` as a per-task gate in this environment because it includes `packages/desktop/src/smoke/launch.test.ts`, which had a pre-existing Playwright/Electron `EPERM` process-kill failure before rewrite work began. Retry the smoke test in Task 7 and report its exact result.
 
 - [ ] **Step 6: Commit**
 
@@ -1340,10 +1342,12 @@ Expected: one style commit.
 Run:
 
 ```bash
-bun test
+bun run --filter @git-ingest/core test
+bun run --filter @git-ingest/cli test
+bun run --filter @git-ingest/desktop test
 ```
 
-Expected: all workspace tests pass.
+Expected: all non-smoke workspace tests pass.
 
 - [ ] **Step 2: Run desktop build**
 
