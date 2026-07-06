@@ -1,234 +1,209 @@
-:root {
-  color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #09111f;
-  color: #edf4ff;
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-mono:
+    "SF Mono", ui-monospace, "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+
+  --color-app: #eef2f7;
+  --color-canvas: #f7f9fc;
+  --color-window: #fbfcfe;
+  --color-toolbar: #f3f5f8;
+  --color-sidebar: #eef3f8;
+  --color-line: #dfe5ee;
+  --color-line-strong: #c8d1dd;
+  --color-ink: #18202b;
+  --color-muted: #687386;
+  --color-accent: #0a84ff;
+  --color-accent-strong: #0067d4;
+  --color-accent-soft: #e7f2ff;
+  --color-success: #34c759;
+  --color-success-strong: #1d7f3a;
+  --color-success-soft: #e9f8ee;
+  --color-warning: #ff9f0a;
+  --color-warning-strong: #9a5d00;
+  --color-warning-soft: #fff5e3;
+  --color-danger: #ff453a;
+  --color-danger-strong: #b42318;
+  --color-danger-soft: #fff0ef;
+
+  --shadow-panel: 0 1px 2px rgb(16 24 40 / 0.06), 0 10px 30px rgb(16 24 40 / 0.05);
+  --shadow-window: 0 24px 80px rgb(30 41 59 / 0.18), 0 2px 8px rgb(30 41 59 / 0.08);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(71, 124, 255, 0.22), transparent 28%),
-    linear-gradient(180deg, #0b1220 0%, #09111f 100%);
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button {
-  border: 0;
-  border-radius: 12px;
-  padding: 0.7rem 1rem;
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(7, 12, 24, 0.9);
-  color: inherit;
-  padding: 0.75rem 0.9rem;
-}
-
-textarea {
-  min-height: 420px;
-  resize: vertical;
-}
-
-.shell {
-  width: min(1400px, 100%);
-  margin: 0 auto;
-  padding: 28px;
-  display: grid;
-  gap: 20px;
-}
-
-.columns {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: 360px minmax(0, 1fr);
-}
-
-.panel {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  background: rgba(9, 15, 28, 0.84);
-  backdrop-filter: blur(18px);
-  padding: 22px;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.25);
-}
-
-.hero {
-  display: grid;
-  gap: 20px;
-}
-
-.drag-active {
-  border-color: rgba(111, 140, 255, 0.65);
-  box-shadow: 0 0 0 1px rgba(111, 140, 255, 0.45), 0 20px 80px rgba(0, 0, 0, 0.25);
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #82a0ff;
-  font-size: 0.75rem;
-}
-
-h1,
-h2,
-h3,
-p {
-  margin-top: 0;
-}
-
-.subtle {
-  color: #96a7c4;
-}
-
-.folder-box {
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.folder-name {
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.folder-path,
-.label,
-.status,
-.message {
-  color: #9eb1cf;
-}
-
-.primary {
-  background: linear-gradient(135deg, #6f8cff, #8d5dff);
-  min-width: 180px;
-  font-weight: 700;
-}
-
-.toolbar,
-.inline-form,
-.output-header,
-.output-stats {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.advanced-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.chip {
-  border-radius: 999px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stats-grid div {
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.stats-grid strong,
-.stats-grid span {
-  display: block;
-}
-
-.warning-list,
-.error {
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 173, 89, 0.14);
-  color: #ffd4a4;
-}
-
-.list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.recent-button {
-  width: 100%;
-  text-align: left;
-  display: grid;
-  gap: 4px;
-}
-
-.recent-button span {
-  color: #96a7c4;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 960px) {
-  .shell {
-    padding: 16px;
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: var(--font-sans);
+    background: var(--color-app);
+    color: var(--color-ink);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  .columns,
-  .advanced-grid,
-  .folder-box {
-    grid-template-columns: 1fr;
-    flex-direction: column;
-    align-items: stretch;
+  * {
+    box-sizing: border-box;
   }
 
-  .primary {
-    width: 100%;
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.72) 0%, rgb(238 242 247 / 0) 46%),
+      radial-gradient(circle at 50% -160px, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0) 42%),
+      var(--color-app);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid rgb(10 132 255 / 0.34);
+    outline-offset: 2px;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: default;
+  }
+
+  ::selection {
+    background: rgb(10 132 255 / 0.22);
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    min-height: 32px;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: rgb(104 115 134 / 0.34);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(104 115 134 / 0.5);
+    background-clip: padding-box;
+  }
+}
+
+@layer components {
+  .native-material {
+    background: rgb(255 255 255 / 0.78);
+    border-color: var(--color-line);
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: saturate(1.18) blur(22px);
+  }
+
+  .native-toolbar {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(243 245 248 / 0.86)),
+      var(--color-toolbar);
+    backdrop-filter: saturate(1.16) blur(22px);
+  }
+
+  .native-sidebar {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(238 243 248 / 0.82)),
+      var(--color-sidebar);
+    backdrop-filter: saturate(1.18) blur(20px);
+  }
+
+  .native-inspector {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.7), rgb(247 249 252 / 0.86)),
+      var(--color-window);
+    backdrop-filter: saturate(1.12) blur(20px);
+  }
+
+  .native-button-shine {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .native-button-shine::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: "";
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0));
+  }
+
+  .native-output,
+  textarea[readonly] {
+    tab-size: 2;
+    caret-color: var(--color-accent);
+  }
+
+  [data-electron-drag-region] {
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  [data-electron-drag-region] button,
+  [data-electron-drag-region] input,
+  [data-electron-drag-region] select,
+  [data-electron-drag-region] textarea,
+  [data-electron-drag-region] a,
+  [data-electron-drag-region] summary,
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+@media (max-width: 1180px) {
+  .native-toolbar {
+    grid-template-columns: 220px minmax(0, 1fr) 280px;
+  }
+
+  .native-sidebar {
+    min-width: 220px;
+  }
+
+  .native-inspector {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 980px) {
+  body {
+    overflow: auto;
+  }
+
+  #root {
+    min-width: 760px;
   }
 }
