@@ -40,6 +40,7 @@ describe('renderer view-model helpers', () => {
   it('converts megabyte input to bytes for preview requests', () => {
     expect(megabytesToBytes('1.5')).toBe(Math.round(1.5 * 1024 * 1024))
     expect(megabytesToBytes('')).toBe(1)
+    expect(megabytesToBytes('abc')).toBe(1)
   })
 
   it('derives project name from POSIX and Windows paths', () => {
@@ -71,7 +72,7 @@ describe('renderer view-model helpers', () => {
     expect(toPreviewMetrics(preview)).toEqual({
       includedFiles: 2,
       skippedFiles: 1,
-      estimatedTokens: '12,345',
+      estimatedTokens: preview.estimatedTokenCount.toLocaleString(),
       estimatedOutput: '639.0 KB'
     })
   })

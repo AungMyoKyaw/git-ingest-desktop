@@ -5,7 +5,9 @@ export function bytesToMegabytes(value: number): number {
 }
 
 export function megabytesToBytes(value: string): number {
-  return Math.max(1, Math.round(Number(value || '0') * 1024 * 1024))
+  const megabytes = Number(value || '0')
+  if (!Number.isFinite(megabytes)) return 1
+  return Math.max(1, Math.round(megabytes * 1024 * 1024))
 }
 
 export function formatBytes(value: number): string {
