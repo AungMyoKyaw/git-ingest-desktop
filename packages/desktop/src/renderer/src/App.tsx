@@ -1,45 +1,45 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 
 import { resolveDropSelection } from './drop'
 import type { DesktopError, GenerateResult, GenerationFinishedMessage, GenerationProgressMessage, PreviewResult } from './env'
+import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types'
+import { bytesToMegabytes, makeRequestKey, megabytesToBytes } from './features/ingest/model/view-model'
+import { AppChrome } from './features/ingest/ui/AppChrome'
+import { Inspector } from './features/ingest/ui/Inspector'
+import { Sidebar } from './features/ingest/ui/Sidebar'
+import { StatusBar } from './features/ingest/ui/StatusBar'
+import { Workspace } from './features/ingest/ui/Workspace'
 
-function bytesToMegabytes(value: number) {
-  return Number((value / (1024 * 1024)).toFixed(1))
+const initialRules: RulesDraft = {
+  format: 'markdown',
+  maxFileSizeMb: '10',
+  includeInput: '',
+  excludeInput: '',
+  includePatterns: [],
+  excludePatterns: []
 }
 
-function formatBytes(value: number) {
-  if (value < 1024) return `${value} B`
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function projectNameFromPath(folderPath: string) {
-  return folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'project'
-}
-
-function makeRequestKey(payload: {
-  rootDir: string
-  format: 'markdown' | 'text'
-  maxFileSizeBytes: number
-  includePatterns: string[]
-  excludePatterns: string[]
-}) {
-  return JSON.stringify({
-    ...payload,
-    includePatterns: [...payload.includePatterns].sort(),
-    excludePatterns: [...payload.excludePatterns].sort()
-  })
+function createRunRecord(
+  requestId: string,
+  source: GenerateResult | PreviewResult,
+  status: RunRecord['status']
+): RunRecord {
+  return {
+    id: requestId,
+    projectName: source.projectName,
+    createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    tokenCount: 'tokenEstimate' in source ? source.tokenEstimate : source.estimatedTokenCount,
+    outputBytes: 'outputBytes' in source ? source.outputBytes : source.estimatedOutputBytes,
+    status
+  }
 }
 
 export function App() {
+  const [selectedView, setSelectedView] = useState<AppView>('projects')
   const [folderPath, setFolderPath] = useState('')
-  const [format, setFormat] = useState<'markdown' | 'text'>('markdown')
-  const [maxFileSizeMb, setMaxFileSizeMb] = useState('10')
-  const [includePatterns, setIncludePatterns] = useState<string[]>([])
-  const [excludePatterns, setExcludePatterns] = useState<string[]>([])
-  const [includeInput, setIncludeInput] = useState('')
-  const [excludeInput, setExcludeInput] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [rules, setRules] = useState<RulesDraft>(initialRules)
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [runs, setRuns] = useState<RunRecord[]>([])
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [generated, setGenerated] = useState<GenerateResult | null>(null)
   const [recentProjects, setRecentProjects] = useState<Array<{ path: string; name: string; lastOpenedAt: string }>>([])
@@ -53,7 +53,10 @@ export function App() {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null)
+
   const activeRequestIdRef = useRef<string | null>(null)
+  const folderPathRef = useRef('')
+  const previewRef = useRef<PreviewResult | null>(null)
   const previewRequestRef = useRef(0)
 
   useEffect(() => {
@@ -61,14 +64,26 @@ export function App() {
   }, [activeRequestId])
 
   useEffect(() => {
+    folderPathRef.current = folderPath
+  }, [folderPath])
+
+  useEffect(() => {
+    previewRef.current = preview
+  }, [preview])
+
+  useEffect(() => {
     void window.gitIngest.getState().then((state) => {
       setRecentProjects(state.recentProjects)
       setFolderPath(state.lastFolderPath ?? '')
-      setFormat(state.settings.format)
-      setMaxFileSizeMb(String(bytesToMegabytes(state.settings.maxFileSizeBytes)))
-      setIncludePatterns(state.settings.includePatterns)
-      setExcludePatterns(state.settings.excludePatterns)
-      setAdvancedOpen(state.settings.advancedOpen)
+      setRules({
+        format: state.settings.format,
+        maxFileSizeMb: String(bytesToMegabytes(state.settings.maxFileSizeBytes)),
+        includeInput: '',
+        excludeInput: '',
+        includePatterns: state.settings.includePatterns,
+        excludePatterns: state.settings.excludePatterns
+      })
+      setRulesOpen(false)
       setHydrated(true)
     })
 
@@ -86,6 +101,7 @@ export function App() {
         return
       }
 
+      activeRequestIdRef.current = null
       setBusy(false)
       setActiveRequestId(null)
 
@@ -94,8 +110,13 @@ export function App() {
         setPreview(message.result)
         setGenerated(message.result)
         setSavedFilePath(null)
+        setError(null)
+        setRuns((current) => [createRunRecord(message.requestId, message.result, 'success'), ...current])
         setRecentProjects((current) => {
-          const next = [{ path: message.result.rootDir, name: message.result.projectName, lastOpenedAt: new Date().toISOString() }, ...current.filter((entry) => entry.path !== message.result.rootDir)]
+          const next = [
+            { path: message.result.rootDir, name: message.result.projectName, lastOpenedAt: new Date().toISOString() },
+            ...current.filter((entry) => entry.path !== message.result.rootDir)
+          ]
           return next.slice(0, 8)
         })
         return
@@ -103,9 +124,17 @@ export function App() {
 
       setPhase('')
       setError(message.error)
-      if (message.status === 'cancelled') {
-        setMessage('Generation cancelled.')
-      }
+      setMessage(message.status === 'cancelled' ? 'Generation cancelled.' : '')
+      setRuns((current) => {
+        const currentFolderPath = folderPathRef.current
+        const currentPreview = previewRef.current
+
+        if (!currentFolderPath || !currentPreview) {
+          return current
+        }
+
+        return [createRunRecord(message.requestId, currentPreview, message.status), ...current]
+      })
     })
 
     return () => {
@@ -116,14 +145,14 @@ export function App() {
 
   const requestPayload = useMemo(() => ({
     rootDir: folderPath,
-    format,
-    maxFileSizeBytes: Math.max(1, Math.round(Number(maxFileSizeMb || '0') * 1024 * 1024)),
-    includePatterns,
-    excludePatterns
-  }), [excludePatterns, folderPath, format, includePatterns, maxFileSizeMb])
+    format: rules.format,
+    maxFileSizeBytes: megabytesToBytes(rules.maxFileSizeMb),
+    includePatterns: rules.includePatterns,
+    excludePatterns: rules.excludePatterns
+  }), [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb])
 
   const requestKey = useMemo(() => makeRequestKey(requestPayload), [requestPayload])
-  const readyToGenerate = !!preview && lastPreviewKey === requestKey && !busy
+  const readyToGenerate = Boolean(preview) && lastPreviewKey === requestKey && !busy
 
   useEffect(() => {
     if (!hydrated) {
@@ -171,7 +200,10 @@ export function App() {
       setPreview(result.result)
       setLastPreviewKey(requestKey)
       setRecentProjects((current) => {
-        const next = [{ path: result.result.rootDir, name: result.result.projectName, lastOpenedAt: new Date().toISOString() }, ...current.filter((entry) => entry.path !== result.result.rootDir)]
+        const next = [
+          { path: result.result.rootDir, name: result.result.projectName, lastOpenedAt: new Date().toISOString() },
+          ...current.filter((entry) => entry.path !== result.result.rootDir)
+        ]
         return next.slice(0, 8)
       })
     })
@@ -182,30 +214,46 @@ export function App() {
     setError(null)
   }
 
+  function resetStaleProjectState() {
+    setPreview(null)
+    setGenerated(null)
+    setSavedFilePath(null)
+    setLastPreviewKey(null)
+    setProgressCounts({})
+  }
+
   async function chooseFolder() {
     resetFeedback()
     const result = await window.gitIngest.chooseFolder()
     if (!result.canceled && result.folderPath) {
       setFolderPath(result.folderPath)
-      setPreview(null)
-      setGenerated(null)
-      setSavedFilePath(null)
-      setLastPreviewKey(null)
+      resetStaleProjectState()
+      setSelectedView('projects')
     }
   }
 
   function addPattern(kind: 'include' | 'exclude') {
-    const value = (kind === 'include' ? includeInput : excludeInput).trim()
-    if (!value) return
+    const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
+    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
+    const value = rules[inputKey].trim()
 
-    if (kind === 'include') {
-      setIncludePatterns((current) => [...current, value])
-      setIncludeInput('')
+    if (!value) {
       return
     }
 
-    setExcludePatterns((current) => [...current, value])
-    setExcludeInput('')
+    setRules((current) => ({
+      ...current,
+      [inputKey]: '',
+      [listKey]: [...current[listKey], value]
+    }))
+  }
+
+  function removePattern(kind: 'include' | 'exclude', pattern: string) {
+    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
+    setRules((current) => ({
+      ...current,
+      [listKey]: current[listKey].filter((entry) => entry !== pattern)
+    }))
   }
 
   async function generateOutput() {
@@ -231,20 +279,38 @@ export function App() {
   }
 
   async function cancelGeneration() {
-    if (!activeRequestId) return
-    await window.gitIngest.cancelGeneration(activeRequestId)
+    if (!activeRequestId) {
+      return
+    }
+
+    const result = await window.gitIngest.cancelGeneration(activeRequestId)
+    if (!result.ok && result.error) {
+      setError(result.error)
+    }
   }
 
   async function copyOutput() {
-    if (!generated) return
+    if (!generated) {
+      return
+    }
+
     const result = await window.gitIngest.copyOutput(generated.output)
     if (result.ok) {
       setMessage('Copied output to clipboard.')
+      setError(null)
+      return
+    }
+
+    if (result.error) {
+      setError(result.error)
     }
   }
 
   async function saveOutput() {
-    if (!generated) return
+    if (!generated) {
+      return
+    }
+
     const result = await window.gitIngest.saveOutput({
       output: generated.output,
       projectName: generated.projectName,
@@ -254,11 +320,20 @@ export function App() {
     if (result.ok && result.filePath) {
       setSavedFilePath(result.filePath)
       setMessage(`Saved output to ${result.filePath}`)
+      setError(null)
+      return
+    }
+
+    if (result.error) {
+      setError(result.error)
     }
   }
 
   async function openSavedFile() {
-    if (!savedFilePath) return
+    if (!savedFilePath) {
+      return
+    }
+
     const result = await window.gitIngest.openOutputFile(savedFilePath)
     if (!result.ok && result.error) {
       setError(result.error)
@@ -266,14 +341,17 @@ export function App() {
   }
 
   async function revealSavedFile() {
-    if (!savedFilePath) return
+    if (!savedFilePath) {
+      return
+    }
+
     const result = await window.gitIngest.revealOutputFile(savedFilePath)
     if (!result.ok && result.error) {
       setError(result.error)
     }
   }
 
-  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setIsDragging(false)
     resetFeedback()
@@ -288,165 +366,81 @@ export function App() {
     }
 
     setFolderPath(selection.path)
-    setPreview(null)
-    setGenerated(null)
-    setSavedFilePath(null)
-    setLastPreviewKey(null)
+    resetStaleProjectState()
+    setSelectedView('projects')
+  }
+
+  function selectRecentProject(path: string) {
+    setFolderPath(path)
+    resetFeedback()
+    resetStaleProjectState()
+    setSelectedView('projects')
   }
 
   return (
-    <main className="shell">
-      <section
-        className={`panel hero ${isDragging ? 'drag-active' : ''}`}
-        onDragEnter={(event) => {
-          event.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragLeave={(event) => {
-          event.preventDefault()
-          if (event.currentTarget === event.target) {
-            setIsDragging(false)
-          }
-        }}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={handleDrop}
-      >
-          <div>
-            <p className="eyebrow">Local only</p>
-            <h1>Git-Ingest</h1>
-            <p className="subtle">Choose a project. Know exactly what AI will see.</p>
-          </div>
-
-        <div className="folder-box">
-            <div>
-              <div className="label">Selected project</div>
-              <div className="folder-name">{folderPath ? projectNameFromPath(folderPath) : 'No folder selected'}</div>
-              <div className="folder-path">{folderPath || 'Drop a project folder here or choose one from your computer.'}</div>
-            </div>
-
-          <button className="primary" onClick={folderPath ? generateOutput : chooseFolder} disabled={folderPath ? !readyToGenerate : busy}>
-            {activeRequestId ? 'Generating…' : folderPath ? 'Generate' : 'Choose Folder'}
-          </button>
+    <div className="h-dvh overflow-hidden p-0 text-ink selection:bg-accent/30 lg:p-5">
+      <div className="relative mx-auto grid h-full max-w-[1680px] grid-rows-[52px_1fr_26px] overflow-hidden border-line-strong bg-window shadow-window ring-1 ring-line lg:rounded-[18px] lg:border">
+        <AppChrome canGenerate={readyToGenerate} isGenerating={busy} onGenerate={() => void generateOutput()} />
+        <div className="grid min-h-0 grid-cols-[260px_minmax(0,1fr)_340px]">
+          <Sidebar
+            onSelectRecentProject={selectRecentProject}
+            onViewChange={setSelectedView}
+            recentProjects={recentProjects}
+            selectedView={selectedView}
+          />
+          <Workspace
+            busy={busy}
+            folderPath={folderPath}
+            generated={generated}
+            isDragging={isDragging}
+            onAddPattern={addPattern}
+            onCancel={() => void cancelGeneration()}
+            onChooseFolder={() => void chooseFolder()}
+            onCloseRules={() => setRulesOpen(false)}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault()
+              if (event.currentTarget === event.target) {
+                setIsDragging(false)
+              }
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleDrop}
+            onGenerate={() => void generateOutput()}
+            onOpenRules={() => setRulesOpen(true)}
+            onRemovePattern={removePattern}
+            onRulesChange={setRules}
+            phase={phase}
+            preview={preview}
+            progressCounts={progressCounts}
+            readyToGenerate={readyToGenerate}
+            rules={rules}
+            rulesOpen={rulesOpen}
+            runs={runs}
+            selectedView={selectedView}
+          />
+          <Inspector
+            error={error}
+            generated={generated}
+            message={message}
+            onClearOutput={() => {
+              setGenerated(null)
+              setSavedFilePath(null)
+              setMessage('')
+            }}
+            onCopy={() => void copyOutput()}
+            onOpenSavedFile={() => void openSavedFile()}
+            onRevealSavedFile={() => void revealSavedFile()}
+            onSave={() => void saveOutput()}
+            preview={preview}
+            savedFilePath={savedFilePath}
+          />
         </div>
-
-        {folderPath ? (
-          <div className="toolbar">
-            <button onClick={chooseFolder} disabled={busy}>Change Folder</button>
-            {busy ? <button onClick={cancelGeneration}>Cancel</button> : null}
-            <button onClick={() => setAdvancedOpen((value) => !value)}>{advancedOpen ? 'Hide Advanced' : 'Advanced'}</button>
-          </div>
-        ) : null}
-
-        {advancedOpen ? (
-          <section className="advanced-grid">
-            <label>
-              <span>Format</span>
-              <select value={format} onChange={(event) => setFormat(event.target.value as 'markdown' | 'text')}>
-                <option value="markdown">Markdown for ChatGPT / Claude</option>
-                <option value="text">Plain text for legacy workflows</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Max file size (MB)</span>
-              <input value={maxFileSizeMb} onChange={(event) => setMaxFileSizeMb(event.target.value)} inputMode="decimal" />
-            </label>
-
-            <div>
-              <span>Include patterns</span>
-              <div className="inline-form">
-                <input placeholder="*.ts or **/*.md" value={includeInput} onChange={(event) => setIncludeInput(event.target.value)} />
-                <button onClick={() => addPattern('include')}>Add</button>
-              </div>
-              <div className="chips">{includePatterns.map((pattern) => <button key={pattern} className="chip" onClick={() => setIncludePatterns((current) => current.filter((entry) => entry !== pattern))}>{pattern}</button>)}</div>
-            </div>
-
-            <div>
-              <span>Exclude patterns</span>
-              <div className="inline-form">
-                <input placeholder="dist/** or *.test.ts" value={excludeInput} onChange={(event) => setExcludeInput(event.target.value)} />
-                <button onClick={() => addPattern('exclude')}>Add</button>
-              </div>
-              <div className="chips">{excludePatterns.map((pattern) => <button key={pattern} className="chip" onClick={() => setExcludePatterns((current) => current.filter((entry) => entry !== pattern))}>{pattern}</button>)}</div>
-            </div>
-          </section>
-        ) : null}
-
-        {phase ? <p className="status">Status: {phase}{progressCounts.processed ? ` (${progressCounts.processed}${progressCounts.total ? ` / ${progressCounts.total}` : ''})` : ''}</p> : null}
-        {!busy && folderPath && readyToGenerate ? <p className="message">Ready to generate.</p> : null}
-        {message ? <p className="message">{message}</p> : null}
-        {error ? (
-          <details className="error" open>
-            <summary>{error.userMessage}</summary>
-            {error.detail ? <pre>{error.detail}</pre> : null}
-          </details>
-        ) : null}
-      </section>
-
-      <section className="columns">
-        <section className="panel summary">
-          <h2>Project Preview</h2>
-          {preview ? (
-            <>
-              <div className="stats-grid">
-                <div><strong>{preview.includedFiles.length}</strong><span>Files included</span></div>
-                <div><strong>{preview.skippedFiles.length}</strong><span>Ignored</span></div>
-                <div><strong>{preview.estimatedTokenCount.toLocaleString()}</strong><span>Estimated tokens</span></div>
-                <div><strong>{formatBytes(preview.estimatedOutputBytes)}</strong><span>Estimated output</span></div>
-              </div>
-              {preview.warnings.length > 0 ? <div className="warning-list">{preview.warnings.map((warning) => <p key={warning}>{warning}</p>)}</div> : null}
-              <h3>Ignored directories</h3>
-              <ul className="list">{preview.ignoredDirectories.map((entry) => <li key={entry.path}><span>{entry.path}</span><span>{entry.reason}</span></li>)}</ul>
-              <h3>Top file types</h3>
-              <ul className="list">{preview.fileTypes.map((entry) => <li key={entry.label}><span>{entry.label}</span><span>{entry.count} files · {entry.percentage}%</span></li>)}</ul>
-            </>
-          ) : (
-            <p className="subtle">Choose a folder to start previewing included files, ignored files, token estimate, and output size automatically.</p>
-          )}
-        </section>
-
-        <section className="panel output">
-          <div className="output-header">
-            <div>
-              <h2>Output</h2>
-              <p className="subtle">Generate to create one clean AI-readable output file.</p>
-            </div>
-            <div className="toolbar">
-              <button onClick={copyOutput} disabled={!generated}>Copy</button>
-              <button onClick={saveOutput} disabled={!generated}>Save As</button>
-              <button onClick={openSavedFile} disabled={!savedFilePath}>Open File</button>
-              <button onClick={revealSavedFile} disabled={!savedFilePath}>{navigator.platform.includes('Mac') ? 'Reveal in Finder' : 'Show in Folder'}</button>
-            </div>
-          </div>
-
-          {generated ? (
-            <>
-              <div className="output-stats">
-                <span>{formatBytes(generated.outputBytes)}</span>
-                <span>Approx. {generated.tokenEstimate} tokens</span>
-              </div>
-              <textarea readOnly value={generated.output} />
-            </>
-          ) : (
-            <p className="subtle">No output yet. Generate to create one clean AI-readable markdown or text file.</p>
-          )}
-        </section>
-      </section>
-
-      <section className="panel recent">
-        <h2>Recent projects</h2>
-        {recentProjects.length === 0 ? (
-          <p className="subtle">Your recent folders will appear here after the first preview or generation.</p>
-        ) : (
-          <ul className="list">{recentProjects.map((project) => <li key={project.path}><button className="recent-button" onClick={() => {
-            setFolderPath(project.path)
-            setPreview(null)
-            setGenerated(null)
-            setSavedFilePath(null)
-            setLastPreviewKey(null)
-          }}>{project.name}<span>{project.path}</span></button></li>)}</ul>
-        )}
-      </section>
-    </main>
+        <StatusBar folderPath={folderPath} generated={generated} phase={phase} preview={preview} />
+      </div>
+    </div>
   )
 }
