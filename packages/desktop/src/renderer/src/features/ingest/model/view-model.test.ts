@@ -4,6 +4,7 @@ import {
   bytesToMegabytes,
   formatBytes,
   makeRequestKey,
+  megabytesToBytes,
   projectNameFromPath,
   toPreviewMetrics
 } from './view-model'
@@ -34,6 +35,11 @@ describe('renderer view-model helpers', () => {
 
   it('converts bytes to megabytes for settings hydration', () => {
     expect(bytesToMegabytes(10 * 1024 * 1024)).toBe(10)
+  })
+
+  it('converts megabyte input to bytes for preview requests', () => {
+    expect(megabytesToBytes('1.5')).toBe(Math.round(1.5 * 1024 * 1024))
+    expect(megabytesToBytes('')).toBe(1)
   })
 
   it('derives project name from POSIX and Windows paths', () => {
