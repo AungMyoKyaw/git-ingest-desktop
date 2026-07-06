@@ -20,7 +20,7 @@ describe('desktop smoke test', () => {
 
     try {
       const window = await electronApp.firstWindow()
-      await expect(window.locator('h1').textContent()).resolves.toBe('Git-Ingest')
+      await expect(window.locator('text=Git-Ingest').first().textContent()).resolves.toBe('Git-Ingest')
     } finally {
       await electronApp.close()
     }
