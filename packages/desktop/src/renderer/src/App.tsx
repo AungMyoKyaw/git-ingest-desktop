@@ -50,14 +50,17 @@ export function App() {
   const [busy, setBusy] = useState(false)
   const [hydrated, setHydrated] = useState(false)
   const [lastPreviewKey, setLastPreviewKey] = useState<string | null>(null)
+  const [previewRefreshToken, setPreviewRefreshToken] = useState(0)
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null)
 
   const activeRequestIdRef = useRef<string | null>(null)
+  const activeGenerationKeyRef = useRef<string | null>(null)
   const folderPathRef = useRef('')
   const previewRef = useRef<PreviewResult | null>(null)
   const previewRequestRef = useRef(0)
+  const requestKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     activeRequestIdRef.current = activeRequestId
@@ -92,6 +95,10 @@ export function App() {
         return
       }
 
+      if (activeGenerationKeyRef.current !== requestKeyRef.current) {
+        return
+      }
+
       setPhase(message.phase)
       setProgressCounts({ processed: message.processedFiles, total: message.totalFiles })
     })
@@ -101,9 +108,24 @@ export function App() {
         return
       }
 
+      const finishedGenerationKey = activeGenerationKeyRef.current
+      const currentRequestKey = requestKeyRef.current
+
       activeRequestIdRef.current = null
+      activeGenerationKeyRef.current = null
       setBusy(false)
       setActiveRequestId(null)
+
+      if (finishedGenerationKey !== currentRequestKey) {
+        setPhase('')
+        setProgressCounts({})
+        setMessage('Generation output ignored because the project or rules changed.')
+        setError(null)
+        setGenerated(null)
+        setSavedFilePath(null)
+        setPreviewRefreshToken((current) => current + 1)
+        return
+      }
 
       if (message.status === 'success') {
         setPhase('done')
@@ -152,6 +174,7 @@ export function App() {
   }), [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb])
 
   const requestKey = useMemo(() => makeRequestKey(requestPayload), [requestPayload])
+  requestKeyRef.current = requestKey
   const readyToGenerate = Boolean(preview) && lastPreviewKey === requestKey && !busy
 
   useEffect(() => {
@@ -168,7 +191,7 @@ export function App() {
       return
     }
 
-    if (activeRequestIdRef.current) {
+    if (activeRequestIdRef.current || activeGenerationKeyRef.current) {
       return
     }
 
@@ -207,7 +230,7 @@ export function App() {
         return next.slice(0, 8)
       })
     })
-  }, [folderPath, hydrated, requestKey, requestPayload])
+  }, [folderPath, hydrated, previewRefreshToken, requestKey, requestPayload])
 
   function resetFeedback() {
     setMessage('')
@@ -222,9 +245,29 @@ export function App() {
     setProgressCounts({})
   }
 
+  function isGenerationActive() {
+    return Boolean(activeRequestIdRef.current || activeGenerationKeyRef.current)
+  }
+
+  function blockGenerationMutation(message = 'Cancel the current generation before changing projects or rules.') {
+    setMessage(message)
+    setError(null)
+  }
+
   async function chooseFolder() {
+    if (isGenerationActive()) {
+      blockGenerationMutation()
+      return
+    }
+
     resetFeedback()
     const result = await window.gitIngest.chooseFolder()
+
+    if (isGenerationActive()) {
+      blockGenerationMutation()
+      return
+    }
+
     if (!result.canceled && result.folderPath) {
       setFolderPath(result.folderPath)
       resetStaleProjectState()
@@ -233,6 +276,11 @@ export function App() {
   }
 
   function addPattern(kind: 'include' | 'exclude') {
+    if (isGenerationActive()) {
+      blockGenerationMutation()
+      return
+    }
+
     const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
     const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
     const value = rules[inputKey].trim()
@@ -249,11 +297,25 @@ export function App() {
   }
 
   function removePattern(kind: 'include' | 'exclude', pattern: string) {
+    if (isGenerationActive()) {
+      blockGenerationMutation()
+      return
+    }
+
     const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
     setRules((current) => ({
       ...current,
       [listKey]: current[listKey].filter((entry) => entry !== pattern)
     }))
+  }
+
+  function handleRulesChange(nextRules: RulesDraft) {
+    if (isGenerationActive()) {
+      blockGenerationMutation()
+      return
+    }
+
+    setRules(nextRules)
   }
 
   async function generateOutput() {
@@ -265,9 +327,15 @@ export function App() {
     setBusy(true)
     setPhase('Generating output')
     setProgressCounts({})
+    const generationKey = requestKey
+    activeGenerationKeyRef.current = generationKey
     const result = await window.gitIngest.generate(requestPayload)
 
     if (!result.ok) {
+      if (activeGenerationKeyRef.current === generationKey) {
+        activeGenerationKeyRef.current = null
+      }
+
       setBusy(false)
       setPhase('')
       setError(result.error)
@@ -354,6 +422,12 @@ export function App() {
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setIsDragging(false)
+
+    if (isGenerationActive()) {
+      blockGenerationMutation('Cancel the current generation before dropping another project.')
+      return
+    }
+
     resetFeedback()
     const selection = resolveDropSelection({
       files: Array.from(event.dataTransfer.files).map((file) => file as File & { path?: string }),
@@ -371,6 +445,11 @@ export function App() {
   }
 
   function selectRecentProject(path: string) {
+    if (isGenerationActive()) {
+      blockGenerationMutation('Cancel the current generation before opening another project.')
+      return
+    }
+
     setFolderPath(path)
     resetFeedback()
     resetStaleProjectState()
@@ -412,7 +491,7 @@ export function App() {
             onGenerate={() => void generateOutput()}
             onOpenRules={() => setRulesOpen(true)}
             onRemovePattern={removePattern}
-            onRulesChange={setRules}
+            onRulesChange={handleRulesChange}
             phase={phase}
             preview={preview}
             progressCounts={progressCounts}
