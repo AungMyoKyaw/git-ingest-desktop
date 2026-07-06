@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import { useEffect, useRef, type ReactElement } from 'react'
 
 import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
 import { Button } from '../../../shared/ui/Button'
@@ -16,6 +16,21 @@ const formatItems = [
   { value: 'markdown', label: 'Markdown' },
   { value: 'text', label: 'Text' }
 ] as const
+
+const focusableSelector = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'a[href]',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',')
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
+    return !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true'
+  })
+}
 
 function PatternEditor({
   kind,
@@ -92,12 +107,79 @@ export function RulesSheet({
   onRemovePattern,
   onClose
 }: RulesSheetProps): ReactElement {
+  const dialogRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+
+    if (!dialog) {
+      return
+    }
+
+    const focusableElements = getFocusableElements(dialog)
+    ;(focusableElements[0] ?? dialog).focus()
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      const currentDialog = dialogRef.current
+
+      if (!currentDialog) {
+        return
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab') {
+        return
+      }
+
+      const currentFocusableElements = getFocusableElements(currentDialog)
+
+      if (currentFocusableElements.length === 0) {
+        event.preventDefault()
+        currentDialog.focus()
+        return
+      }
+
+      const firstElement = currentFocusableElements[0]
+      const lastElement = currentFocusableElements[currentFocusableElements.length - 1]
+      const activeElement = document.activeElement
+
+      if (event.shiftKey && (activeElement === firstElement || !currentDialog.contains(activeElement))) {
+        event.preventDefault()
+        lastElement.focus()
+        return
+      }
+
+      if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault()
+        firstElement.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div className="absolute inset-0 z-20 flex justify-end bg-black/20">
-      <aside className="h-full w-full max-w-[420px] overflow-auto border-l border-line bg-window px-5 py-4 shadow-window">
+      <aside
+        ref={dialogRef}
+        aria-labelledby="rules-sheet-title"
+        aria-modal="true"
+        className="h-full w-full max-w-[420px] overflow-auto border-l border-line bg-window px-5 py-4 shadow-window"
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-[15px] font-semibold text-ink">Rules</h2>
+            <h2 className="text-[15px] font-semibold text-ink" id="rules-sheet-title">
+              Rules
+            </h2>
             <p className="mt-1 text-[12px] text-muted">Format, size limits, and path filters.</p>
           </div>
           <Button onClick={onClose} size="sm" variant="ghost">
