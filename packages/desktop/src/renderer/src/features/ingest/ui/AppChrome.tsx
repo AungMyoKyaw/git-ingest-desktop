@@ -28,8 +28,8 @@ export function AppChrome({ isGenerating, canGenerate, onGenerate }: AppChromePr
       <div className="flex items-center justify-end gap-2 px-3">
         <div className="hidden h-8 items-center gap-2 rounded-[9px] border border-line bg-black/[0.035] px-2.5 text-xs text-muted xl:flex">
           <SearchIcon className="h-3.5 w-3.5" />
-          <span>Command</span>
-          <kbd className="rounded bg-black/[0.055] px-1.5 py-0.5 text-[10px] text-ink/72">Cmd K</kbd>
+          <span className="whitespace-nowrap">Command</span>
+          <kbd className="min-w-10 whitespace-nowrap rounded bg-black/[0.055] px-1.5 py-0.5 text-center text-[10px] text-ink/72">Cmd K</kbd>
         </div>
         <div className="hidden h-8 items-center gap-1.5 rounded-[9px] border border-success/20 bg-success-soft px-2.5 text-xs font-medium text-success-strong lg:flex">
           <ShieldIcon className="h-3.5 w-3.5" />
