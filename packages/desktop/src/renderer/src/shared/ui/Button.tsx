@@ -36,18 +36,19 @@ export function Button({
   leftIcon,
   rightIcon,
   children,
+  type = 'button',
   ...props
 }: ButtonProps): ReactElement {
   return (
     <button
+      {...props}
       className={cn(
         'inline-flex select-none items-center justify-center gap-2 rounded-[10px] font-medium outline-none transition disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 focus-visible:ring-2 focus-visible:ring-accent/70',
         variantClass[variant],
         sizeClass[size],
         className
       )}
-      type="button"
-      {...props}
+      type={type}
     >
       {leftIcon}
       {children ? <span>{children}</span> : null}
