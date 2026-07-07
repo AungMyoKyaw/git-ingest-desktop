@@ -10,5 +10,9 @@ export default defineConfig({
     alias: {
       '@git-ingest/core': path.resolve(currentDir, '../core/src/index.ts')
     }
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
+    exclude: ['dist/**', 'node_modules/**']
   }
 })

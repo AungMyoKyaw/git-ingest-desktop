@@ -283,7 +283,13 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
   }
 
   return (
-    <div className="min-h-0 overflow-auto">
+    <div
+      className={cn('min-h-0 overflow-auto', props.isDragging && 'bg-accent-soft/50')}
+      onDragEnter={props.onDragEnter}
+      onDragLeave={props.onDragLeave}
+      onDragOver={props.onDragOver}
+      onDrop={props.onDrop}
+    >
       <ProjectHeader
         busy={props.busy}
         folderPath={props.folderPath}
