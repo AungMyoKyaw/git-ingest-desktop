@@ -77,8 +77,9 @@
   select:focus-visible,
   textarea:focus-visible,
   summary:focus-visible {
-    outline: 2px solid rgb(10 132 255 / 0.34);
-    outline-offset: 2px;
+    border-radius: 8px;
+    outline: none;
+    box-shadow: inset 0 0 0 2px rgb(10 132 255 / 0.28);
   }
 
   button:disabled,
@@ -161,6 +162,40 @@
   textarea[readonly] {
     tab-size: 2;
     caret-color: var(--color-accent);
+  }
+
+  .scroll-surface,
+  .native-output {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: transparent transparent;
+  }
+
+  .scroll-surface::-webkit-scrollbar,
+  .native-output::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scroll-surface::-webkit-scrollbar-thumb,
+  .native-output::-webkit-scrollbar-thumb {
+    background: rgb(104 115 134 / 0);
+    background-clip: padding-box;
+  }
+
+  .scroll-surface:hover::-webkit-scrollbar-thumb,
+  .scroll-surface:focus-within::-webkit-scrollbar-thumb,
+  .native-output:hover::-webkit-scrollbar-thumb,
+  .native-output:focus::-webkit-scrollbar-thumb {
+    background: rgb(104 115 134 / 0.36);
+    background-clip: padding-box;
+  }
+
+  .scroll-surface:hover,
+  .scroll-surface:focus-within,
+  .native-output:hover,
+  .native-output:focus {
+    scrollbar-color: rgb(104 115 134 / 0.36) transparent;
   }
 
   [data-electron-drag-region] {

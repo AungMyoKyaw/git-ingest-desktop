@@ -130,7 +130,7 @@ export function Inspector({
       </InspectorSection>
 
       <InspectorSection
-        bodyClassName="min-h-0 overflow-auto"
+        bodyClassName="scroll-surface min-h-0 overflow-auto"
         bodyTestId="inspector-ignored-body"
         className="max-h-[210px] flex-col overflow-hidden"
         testId="inspector-ignored-section"
@@ -163,7 +163,7 @@ export function Inspector({
 
       {warnings.length > 0 ? (
         <InspectorSection
-          bodyClassName="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1"
+          bodyClassName="scroll-surface min-h-0 flex-1 space-y-1.5 overflow-auto pr-1"
           bodyTestId="inspector-warnings-list"
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
           testId="inspector-warnings-section"

@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEventHandler, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type DragEventHandler, type ReactElement } from 'react';
 
 import type { GenerateResult, PreviewResult } from '../../../env';
 import {
@@ -157,6 +157,13 @@ function FileListSheet({
   const [activeTab, setActiveTab] = useState<FileListTab>(initialTab);
   const [query, setQuery] = useState('');
 
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+      setQuery('');
+    }
+  }, [initialTab, open]);
+
   const tabs: Array<{ id: FileListTab; label: string; count: number }> = [
     { id: 'included', label: 'Included', count: preview?.includedFiles.length ?? 0 },
     { id: 'skipped', label: 'Skipped', count: preview?.skippedFiles.length ?? 0 },
@@ -209,14 +216,14 @@ function FileListSheet({
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex justify-end bg-black/20">
+    <div className="absolute inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px]">
       <aside
         aria-label="File inspection"
         aria-modal="true"
-        className="h-full w-full max-w-[720px] overflow-hidden border-l border-line bg-window shadow-window"
+        className="flex h-full w-full max-w-[760px] flex-col overflow-hidden border-l border-line bg-window shadow-window"
         role="dialog"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+        <div className="shrink-0 flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <div>
             <h2 className="text-[15px] font-semibold text-ink">File inspection</h2>
             <p className="mt-1 text-[12px] text-muted">
@@ -233,7 +240,7 @@ function FileListSheet({
             Close
           </Button>
         </div>
-        <div className="border-b border-line px-5 py-3">
+        <div className="shrink-0 border-b border-line px-5 py-3">
           <div className="flex flex-wrap items-center gap-2">
             {tabs.map((tab) => (
               <button
@@ -263,7 +270,7 @@ function FileListSheet({
             />
           </label>
         </div>
-        <div className="h-[calc(100%-145px)] overflow-auto p-5">
+        <div className="scroll-surface min-h-0 flex-1 overflow-auto p-5">
           {rows.length === 0 ? (
             <p className="rounded-[10px] border border-line bg-white/76 p-4 text-[13px] text-muted">
               No rows match this view.
@@ -302,14 +309,14 @@ function FileListSheet({
 
 function PreviewPanel({
   preview,
+  generated,
   onOpenFileList,
 }: {
   preview: PreviewResult | null;
+  generated: GenerateResult | null;
   onOpenFileList: (tab: FileListTab) => void;
 }): ReactElement {
   const metrics = toPreviewMetrics(preview);
-  const rows = preview?.includedFiles.slice(0, 12) ?? [];
-
   return (
     <section className="rounded-[10px] border border-line bg-white/86">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
@@ -359,50 +366,47 @@ function PreviewPanel({
         </div>
       ) : null}
       {preview ? (
-        <details className="group" open>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[12px] font-medium text-ink/82 hover:bg-black/[0.025]">
-            <span>Included files</span>
-            <span className="text-[11px] font-normal text-muted">
-              Showing {rows.length} of {preview.includedFiles.length}
-            </span>
-          </summary>
-          <div className="border-t border-line px-4 py-3">
-            {preview.fileTypes.length === 0 ? null : (
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {preview.fileTypes.map((type) => (
-                  <span
-                    key={type.label}
-                    className="rounded-[7px] border border-line bg-black/[0.025] px-2 py-1 text-[11px] text-muted"
-                  >
-                    {type.label} {type.count} ({type.percentage}%)
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="overflow-hidden rounded-[10px] border border-line">
-              <table className="w-full table-fixed border-collapse text-left text-[12px]">
-                <thead className="bg-black/[0.035] text-[10px] uppercase tracking-[0.12em] text-ink/40">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Path</th>
-                    <th className="w-28 px-3 py-2 font-semibold">Type</th>
-                    <th className="w-24 px-3 py-2 text-right font-semibold">Size</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((file) => (
-                    <tr key={file.relativePath} className="border-t border-line">
-                      <td className="truncate px-3 py-2 text-ink/86">{file.relativePath}</td>
-                      <td className="truncate px-3 py-2 text-muted">
-                        {file.label || file.language}
-                      </td>
-                      <td className="px-3 py-2 text-right text-muted">{formatBytes(file.size)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-[12px] font-medium text-ink/82">Included files</h3>
+              <p className="mt-0.5 text-[11px] text-muted">
+                Showing summary only. Open the inspection sheet for the full list.
+              </p>
             </div>
+            <Button
+              leftIcon={<TableIcon className="h-3.5 w-3.5" />}
+              onClick={() => onOpenFileList('included')}
+              size="sm"
+              variant="toolbar"
+            >
+              View all {preview.includedFiles.length}
+            </Button>
           </div>
-        </details>
+          {preview.fileTypes.length === 0 ? null : (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {preview.fileTypes.slice(0, 8).map((type) => (
+                <button
+                  key={type.label}
+                  className="rounded-[7px] border border-line bg-black/[0.025] px-2 py-1 text-[11px] text-muted transition hover:bg-black/[0.045] hover:text-ink"
+                  onClick={() => onOpenFileList('included')}
+                  type="button"
+                >
+                  {type.label} {type.count} ({type.percentage}%)
+                </button>
+              ))}
+              {preview.fileTypes.length > 8 ? (
+                <button
+                  className="rounded-[7px] border border-line bg-black/[0.025] px-2 py-1 text-[11px] text-muted transition hover:bg-black/[0.045] hover:text-ink"
+                  onClick={() => onOpenFileList('included')}
+                  type="button"
+                >
+                  +{preview.fileTypes.length - 8} more
+                </button>
+              ) : null}
+            </div>
+          )}
+        </div>
       ) : (
         <p className="px-4 py-4 text-[12px] text-muted">Preview starts after folder selection.</p>
       )}
@@ -498,73 +502,80 @@ function OutputEditor({
 }): ReactElement {
   const hasOutput = Boolean(generated?.output);
 
+  if (!hasOutput) {
+    return (
+      <section className="flex select-none items-center justify-between gap-3 rounded-[10px] border border-line bg-white/86 px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-semibold text-ink">Generated output</h2>
+          <p className="mt-0.5 truncate text-[12px] text-muted">
+            Generate to unlock copy, save, open, and reveal.
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 rounded-[8px] border border-dashed border-line bg-black/[0.018] px-2.5 py-1.5 text-[12px] font-medium text-ink/64">
+          <FileIcon className="h-3.5 w-3.5" />
+          Output waiting
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="flex min-h-[260px] flex-col rounded-[10px] border border-line bg-white/86">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+    <section className="flex h-[clamp(240px,32vh,360px)] flex-col rounded-[10px] border border-line bg-white/86">
+      <div className="flex select-none items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <h2 className="text-[14px] font-semibold text-ink">Generated output</h2>
           <p className="mt-0.5 text-[12px] text-muted">
-            {generated
-              ? `${generated.format} · ${formatBytes(generated.outputBytes)}`
-              : 'Generate to unlock copy, save, open, and reveal.'}
+            {generated.format} · {formatBytes(generated.outputBytes)}
           </p>
           {inlineFeedback ? (
             <p className="mt-1 text-[12px] font-medium text-success-strong">{inlineFeedback}</p>
           ) : null}
         </div>
-        {hasOutput ? (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            <Button
-              leftIcon={<CopyIcon className="h-3.5 w-3.5" />}
-              onClick={onCopy}
-              size="sm"
-              variant="primary"
-            >
-              Copy
-            </Button>
-            <Button
-              leftIcon={<FileIcon className="h-3.5 w-3.5" />}
-              onClick={onSave}
-              size="sm"
-              variant="secondary"
-            >
-              Save
-            </Button>
-            <Button
-              disabled={!savedFilePath}
-              leftIcon={<ExternalIcon className="h-3.5 w-3.5" />}
-              onClick={onOpenSavedFile}
-              size="sm"
-              variant="toolbar"
-            >
-              Open
-            </Button>
-            <Button
-              disabled={!savedFilePath}
-              leftIcon={<FolderIcon className="h-3.5 w-3.5" />}
-              onClick={onRevealSavedFile}
-              size="sm"
-              variant="toolbar"
-            >
-              Reveal
-            </Button>
-            <Button onClick={onClearOutput} size="sm" variant="ghost">
-              Clear output
-            </Button>
-          </div>
-        ) : null}
-      </div>
-      {hasOutput ? (
-        <textarea
-          className="native-output min-h-0 flex-1 resize-none border-0 bg-transparent p-4 font-mono text-[12px] leading-5 text-ink outline-none"
-          readOnly
-          value={generated?.output ?? ''}
-        />
-      ) : (
-        <div className="flex min-h-[180px] flex-1 items-center justify-center px-4 py-8 text-center text-[13px] leading-6 text-muted">
-          Generated content will appear here after you run Generate.
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <Button
+            leftIcon={<CopyIcon className="h-3.5 w-3.5" />}
+            onClick={onCopy}
+            size="sm"
+            variant="primary"
+          >
+            Copy
+          </Button>
+          <Button
+            leftIcon={<FileIcon className="h-3.5 w-3.5" />}
+            onClick={onSave}
+            size="sm"
+            variant="secondary"
+          >
+            Save
+          </Button>
+          <Button
+            disabled={!savedFilePath}
+            leftIcon={<ExternalIcon className="h-3.5 w-3.5" />}
+            onClick={onOpenSavedFile}
+            size="sm"
+            variant="toolbar"
+          >
+            Open
+          </Button>
+          <Button
+            disabled={!savedFilePath}
+            leftIcon={<FolderIcon className="h-3.5 w-3.5" />}
+            onClick={onRevealSavedFile}
+            size="sm"
+            variant="toolbar"
+          >
+            Reveal
+          </Button>
+          <Button onClick={onClearOutput} size="sm" variant="ghost">
+            Clear output
+          </Button>
         </div>
-      )}
+      </div>
+      <textarea
+        className="native-output scroll-surface min-h-0 flex-1 resize-none border-0 bg-transparent p-4 font-mono text-[12px] leading-5 text-ink outline-none"
+        readOnly
+        value={generated.output}
+      />
     </section>
   );
 }
@@ -595,7 +606,10 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
 
   return (
     <div
-      className={cn('min-h-0 overflow-auto', props.isDragging && 'bg-accent-soft/50')}
+      className={cn(
+        'scroll-surface min-h-0 overflow-auto',
+        props.isDragging && 'bg-accent-soft/50',
+      )}
       onDragEnter={props.onDragEnter}
       onDragLeave={props.onDragLeave}
       onDragOver={props.onDragOver}
@@ -608,8 +622,12 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
         preview={props.preview}
         rules={props.rules}
       />
-      <div className="grid gap-4 p-5">
-        <PreviewPanel onOpenFileList={openFileList} preview={props.preview} />
+      <div className="grid gap-4 p-5 pb-14">
+        <PreviewPanel
+          generated={props.generated}
+          onOpenFileList={openFileList}
+          preview={props.preview}
+        />
         <PipelinePanel
           busy={props.busy}
           generated={props.generated}
@@ -640,7 +658,7 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
 
 function RunsView({ runs }: { runs: RunRecord[] }): ReactElement {
   return (
-    <div className="min-h-0 overflow-auto p-6">
+    <div className="scroll-surface min-h-0 overflow-auto p-6 pb-14">
       <div className="mb-4 flex items-center gap-2">
         <ClockIcon className="h-4 w-4 text-accent" />
         <h1 className="text-[18px] font-semibold text-ink">Runs</h1>
