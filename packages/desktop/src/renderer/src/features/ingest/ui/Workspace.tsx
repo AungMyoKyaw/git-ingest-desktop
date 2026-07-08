@@ -1,4 +1,4 @@
-import type { DragEventHandler, ReactElement } from 'react';
+import { useMemo, useState, type DragEventHandler, type ReactElement } from 'react';
 
 import type { GenerateResult, PreviewResult } from '../../../env';
 import {
@@ -7,13 +7,12 @@ import {
   ExternalIcon,
   FileIcon,
   FolderIcon,
-  PlayIcon,
-  SettingsIcon,
+  SearchIcon,
   TableIcon,
+  XIcon,
 } from '../../../shared/icons/Icons';
 import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
-import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
 import type { AppView, RulesDraft, RunRecord } from '../model/types';
 import { formatBytes, toPreviewMetrics } from '../model/view-model';
 import { RulesSheet } from './RulesSheet';
@@ -49,12 +48,8 @@ export type WorkspaceProps = {
   onDragLeave: DragEventHandler<HTMLDivElement>;
   onDragOver: DragEventHandler<HTMLDivElement>;
   onDrop: DragEventHandler<HTMLDivElement>;
+  inlineFeedback: string;
 };
-
-const formatItems = [
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'text', label: 'Text' },
-] as const;
 
 function folderNameFromPath(folderPath: string) {
   return folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'Project';
@@ -64,28 +59,20 @@ function ProjectHeader({
   folderPath,
   preview,
   rules,
-  busy,
-  readyToGenerate,
   onChooseFolder,
-  onGenerate,
-  onCancel,
   onOpenRules,
 }: {
   folderPath: string;
   preview: PreviewResult | null;
   rules: RulesDraft;
-  busy: boolean;
-  readyToGenerate: boolean;
   onChooseFolder: () => void;
-  onGenerate: () => void;
-  onCancel: () => void;
   onOpenRules: () => void;
 }): ReactElement {
   const projectName = preview?.projectName || folderNameFromPath(folderPath);
-  const ruleSummary = `${rules.format.toUpperCase()} - ${rules.maxFileSizeMb || '0'} MB max`;
+  const ruleSummary = `${rules.format.toUpperCase()} · ${rules.maxFileSizeMb || '0'} MB max`;
 
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-line bg-white/72 px-6 py-4">
+    <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-canvas/95 px-6 py-4 backdrop-blur">
       <div className="flex min-w-0 items-start gap-3">
         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-line bg-white text-accent">
           <FolderIcon className="h-4.5 w-4.5" />
@@ -110,26 +97,11 @@ function ProjectHeader({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Button onClick={onChooseFolder} size="sm" variant="toolbar">
-          Choose
+          Change folder
         </Button>
         <Button onClick={onOpenRules} size="sm" variant="toolbar">
-          Edit Rules
+          Edit rules
         </Button>
-        {busy ? (
-          <Button onClick={onCancel} size="sm" variant="danger">
-            Cancel
-          </Button>
-        ) : (
-          <Button
-            disabled={!readyToGenerate}
-            leftIcon={<PlayIcon className="h-3.5 w-3.5" />}
-            onClick={onGenerate}
-            size="sm"
-            variant="primary"
-          >
-            Generate
-          </Button>
-        )}
       </div>
     </div>
   );
@@ -169,7 +141,172 @@ function EmptyProjects({
   );
 }
 
-function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElement {
+type FileListTab = 'included' | 'skipped' | 'ignored' | 'warnings';
+
+function FileListSheet({
+  open,
+  preview,
+  initialTab,
+  onClose,
+}: {
+  open: boolean;
+  preview: PreviewResult | null;
+  initialTab: FileListTab;
+  onClose: () => void;
+}): ReactElement | null {
+  const [activeTab, setActiveTab] = useState<FileListTab>(initialTab);
+  const [query, setQuery] = useState('');
+
+  const tabs: Array<{ id: FileListTab; label: string; count: number }> = [
+    { id: 'included', label: 'Included', count: preview?.includedFiles.length ?? 0 },
+    { id: 'skipped', label: 'Skipped', count: preview?.skippedFiles.length ?? 0 },
+    { id: 'ignored', label: 'Ignored', count: preview?.ignoredDirectories.length ?? 0 },
+    { id: 'warnings', label: 'Warnings', count: preview?.warnings.length ?? 0 },
+  ];
+
+  const rows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const allRows =
+      activeTab === 'included'
+        ? (preview?.includedFiles ?? []).map((file) => ({
+            key: file.relativePath,
+            primary: file.relativePath,
+            secondary: file.label || file.language,
+            trailing: formatBytes(file.size),
+          }))
+        : activeTab === 'skipped'
+          ? (preview?.skippedFiles ?? []).map((file) => ({
+              key: `${file.relativePath}-${file.reason}`,
+              primary: file.relativePath,
+              secondary: file.reason,
+              trailing: 'Skipped',
+            }))
+          : activeTab === 'ignored'
+            ? (preview?.ignoredDirectories ?? []).map((directory) => ({
+                key: `${directory.path}-${directory.reason}`,
+                primary: directory.path,
+                secondary: directory.reason,
+                trailing: 'Ignored',
+              }))
+            : (preview?.warnings ?? []).map((warning) => ({
+                key: warning,
+                primary: warning,
+                secondary: 'Warning',
+                trailing: '',
+              }));
+
+    if (!normalizedQuery) {
+      return allRows;
+    }
+
+    return allRows.filter((row) =>
+      `${row.primary} ${row.secondary}`.toLowerCase().includes(normalizedQuery),
+    );
+  }, [activeTab, preview, query]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="absolute inset-0 z-30 flex justify-end bg-black/20">
+      <aside
+        aria-label="File inspection"
+        aria-modal="true"
+        className="h-full w-full max-w-[720px] overflow-hidden border-l border-line bg-window shadow-window"
+        role="dialog"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <div>
+            <h2 className="text-[15px] font-semibold text-ink">File inspection</h2>
+            <p className="mt-1 text-[12px] text-muted">
+              Inspect included, skipped, ignored, and warning details before generation.
+            </p>
+          </div>
+          <Button
+            aria-label="Close file inspection"
+            leftIcon={<XIcon className="h-3.5 w-3.5" />}
+            onClick={onClose}
+            size="sm"
+            variant="ghost"
+          >
+            Close
+          </Button>
+        </div>
+        <div className="border-b border-line px-5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                aria-pressed={activeTab === tab.id}
+                className={cn(
+                  'h-8 rounded-[8px] px-3 text-[12px] font-medium transition',
+                  activeTab === tab.id
+                    ? 'bg-black/[0.075] text-ink'
+                    : 'text-muted hover:bg-black/[0.04] hover:text-ink',
+                )}
+                onClick={() => setActiveTab(tab.id)}
+                type="button"
+              >
+                {tab.label} · {tab.count}
+              </button>
+            ))}
+          </div>
+          <label className="mt-3 flex h-9 items-center gap-2 rounded-[9px] border border-line bg-white px-3">
+            <SearchIcon className="h-4 w-4 shrink-0 text-muted" />
+            <span className="sr-only">Search file inspection rows</span>
+            <input
+              className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-ink outline-none"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search paths, reasons, or warnings"
+              value={query}
+            />
+          </label>
+        </div>
+        <div className="h-[calc(100%-145px)] overflow-auto p-5">
+          {rows.length === 0 ? (
+            <p className="rounded-[10px] border border-line bg-white/76 p-4 text-[13px] text-muted">
+              No rows match this view.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-[10px] border border-line bg-white/86">
+              <table className="w-full table-fixed border-collapse text-left text-[12px]">
+                <thead className="bg-black/[0.035] text-[10px] uppercase tracking-[0.12em] text-muted">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">Path or message</th>
+                    <th className="w-44 px-3 py-2 font-semibold">Detail</th>
+                    <th className="w-24 px-3 py-2 text-right font-semibold">State</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.key} className="border-t border-line">
+                      <td className="truncate px-3 py-2 text-ink/86" title={row.primary}>
+                        {row.primary}
+                      </td>
+                      <td className="truncate px-3 py-2 text-muted" title={row.secondary}>
+                        {row.secondary}
+                      </td>
+                      <td className="truncate px-3 py-2 text-right text-muted">{row.trailing}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function PreviewPanel({
+  preview,
+  onOpenFileList,
+}: {
+  preview: PreviewResult | null;
+  onOpenFileList: (tab: FileListTab) => void;
+}): ReactElement {
   const metrics = toPreviewMetrics(preview);
   const rows = preview?.includedFiles.slice(0, 12) ?? [];
 
@@ -182,7 +319,15 @@ function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElem
             Review the bundle before generating output.
           </p>
         </div>
-        <TableIcon className="h-4 w-4 text-muted" />
+        <Button
+          disabled={!preview}
+          leftIcon={<TableIcon className="h-3.5 w-3.5" />}
+          onClick={() => onOpenFileList('included')}
+          size="sm"
+          variant="toolbar"
+        >
+          Review files
+        </Button>
       </div>
       <div className="grid grid-cols-4 divide-x divide-line border-b border-line bg-black/[0.018]">
         {[
@@ -191,14 +336,30 @@ function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElem
           ['Tokens', metrics.estimatedTokens],
           ['Estimate', metrics.estimatedOutput],
         ].map(([label, value]) => (
-          <div key={label} className="px-4 py-3">
+          <button
+            key={label}
+            className="px-4 py-3 text-left transition hover:bg-black/[0.025]"
+            disabled={!preview}
+            onClick={() => {
+              if (label === 'Included') onOpenFileList('included');
+              if (label === 'Skipped') onOpenFileList('skipped');
+              if (label === 'Estimate' || label === 'Tokens') onOpenFileList('included');
+            }}
+            type="button"
+          >
             <div className="text-[11px] font-medium text-muted">{label}</div>
             <div className="mt-1 truncate text-[16px] font-semibold text-ink">{value}</div>
-          </div>
+          </button>
         ))}
       </div>
+      {preview?.warnings.length ? (
+        <div className="border-b border-warning/20 bg-warning-soft px-4 py-2 text-[12px] leading-5 text-warning-strong">
+          {preview.warnings[0]}
+          {preview.warnings.length > 1 ? ` +${preview.warnings.length - 1} more` : ''}
+        </div>
+      ) : null}
       {preview ? (
-        <details className="group">
+        <details className="group" open>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[12px] font-medium text-ink/82 hover:bg-black/[0.025]">
             <span>Included files</span>
             <span className="text-[11px] font-normal text-muted">
@@ -266,6 +427,10 @@ function PipelinePanel({
   const processed = progressCounts.processed ?? 0;
   const progress = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
 
+  if (!busy && generated) {
+    return <></>;
+  }
+
   return (
     <section className="rounded-[10px] border border-line bg-white/86 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -315,6 +480,7 @@ function PipelinePanel({
 function OutputEditor({
   generated,
   savedFilePath,
+  inlineFeedback,
   onCopy,
   onSave,
   onOpenSavedFile,
@@ -323,6 +489,7 @@ function OutputEditor({
 }: {
   generated: GenerateResult | null;
   savedFilePath: string | null;
+  inlineFeedback: string;
   onCopy: () => void;
   onSave: () => void;
   onOpenSavedFile: () => void;
@@ -338,62 +505,79 @@ function OutputEditor({
           <h2 className="text-[14px] font-semibold text-ink">Generated output</h2>
           <p className="mt-0.5 text-[12px] text-muted">
             {generated
-              ? `${generated.format} - ${formatBytes(generated.outputBytes)}`
+              ? `${generated.format} · ${formatBytes(generated.outputBytes)}`
               : 'Generate to unlock copy, save, open, and reveal.'}
           </p>
+          {inlineFeedback ? (
+            <p className="mt-1 text-[12px] font-medium text-success-strong">{inlineFeedback}</p>
+          ) : null}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          <Button
-            disabled={!hasOutput}
-            leftIcon={<CopyIcon className="h-3.5 w-3.5" />}
-            onClick={onCopy}
-            size="sm"
-          >
-            Copy
-          </Button>
-          <Button
-            disabled={!hasOutput}
-            leftIcon={<FileIcon className="h-3.5 w-3.5" />}
-            onClick={onSave}
-            size="sm"
-            variant={hasOutput ? 'primary' : 'secondary'}
-          >
-            Save
-          </Button>
-          <Button
-            disabled={!savedFilePath}
-            leftIcon={<ExternalIcon className="h-3.5 w-3.5" />}
-            onClick={onOpenSavedFile}
-            size="sm"
-            variant="toolbar"
-          >
-            Open
-          </Button>
-          <Button
-            disabled={!savedFilePath}
-            leftIcon={<FolderIcon className="h-3.5 w-3.5" />}
-            onClick={onRevealSavedFile}
-            size="sm"
-            variant="toolbar"
-          >
-            Reveal
-          </Button>
-          <Button disabled={!hasOutput} onClick={onClearOutput} size="sm" variant="ghost">
-            Clear
-          </Button>
-        </div>
+        {hasOutput ? (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <Button
+              leftIcon={<CopyIcon className="h-3.5 w-3.5" />}
+              onClick={onCopy}
+              size="sm"
+              variant="primary"
+            >
+              Copy
+            </Button>
+            <Button
+              leftIcon={<FileIcon className="h-3.5 w-3.5" />}
+              onClick={onSave}
+              size="sm"
+              variant="secondary"
+            >
+              Save
+            </Button>
+            <Button
+              disabled={!savedFilePath}
+              leftIcon={<ExternalIcon className="h-3.5 w-3.5" />}
+              onClick={onOpenSavedFile}
+              size="sm"
+              variant="toolbar"
+            >
+              Open
+            </Button>
+            <Button
+              disabled={!savedFilePath}
+              leftIcon={<FolderIcon className="h-3.5 w-3.5" />}
+              onClick={onRevealSavedFile}
+              size="sm"
+              variant="toolbar"
+            >
+              Reveal
+            </Button>
+            <Button onClick={onClearOutput} size="sm" variant="ghost">
+              Clear output
+            </Button>
+          </div>
+        ) : null}
       </div>
-      <textarea
-        className="min-h-0 flex-1 resize-none border-0 bg-transparent p-4 font-mono text-[12px] leading-5 text-ink outline-none"
-        readOnly
-        value={generated?.output ?? ''}
-        placeholder="Generated content will appear here."
-      />
+      {hasOutput ? (
+        <textarea
+          className="native-output min-h-0 flex-1 resize-none border-0 bg-transparent p-4 font-mono text-[12px] leading-5 text-ink outline-none"
+          readOnly
+          value={generated?.output ?? ''}
+        />
+      ) : (
+        <div className="flex min-h-[180px] flex-1 items-center justify-center px-4 py-8 text-center text-[13px] leading-6 text-muted">
+          Generated content will appear here after you run Generate.
+        </div>
+      )}
     </section>
   );
 }
 
 function ProjectsView(props: WorkspaceProps): ReactElement {
+  const [fileListTab, setFileListTab] = useState<FileListTab>('included');
+  const [fileListOpen, setFileListOpen] = useState(false);
+
+  function openFileList(tab: FileListTab): void {
+    setFileListTab(tab);
+    setFileListOpen(true);
+  }
+
   if (!props.folderPath) {
     return (
       <EmptyProjects
@@ -418,18 +602,14 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
       onDrop={props.onDrop}
     >
       <ProjectHeader
-        busy={props.busy}
         folderPath={props.folderPath}
-        onCancel={props.onCancel}
         onChooseFolder={props.onChooseFolder}
-        onGenerate={props.onGenerate}
         onOpenRules={props.onOpenRules}
         preview={props.preview}
-        readyToGenerate={props.readyToGenerate}
         rules={props.rules}
       />
       <div className="grid gap-4 p-5">
-        <PreviewPanel preview={props.preview} />
+        <PreviewPanel onOpenFileList={openFileList} preview={props.preview} />
         <PipelinePanel
           busy={props.busy}
           generated={props.generated}
@@ -439,6 +619,7 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
         />
         <OutputEditor
           generated={props.generated}
+          inlineFeedback={props.inlineFeedback}
           onClearOutput={props.onClearOutput}
           onCopy={props.onCopy}
           onOpenSavedFile={props.onOpenSavedFile}
@@ -447,6 +628,12 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
           savedFilePath={props.savedFilePath}
         />
       </div>
+      <FileListSheet
+        initialTab={fileListTab}
+        onClose={() => setFileListOpen(false)}
+        open={fileListOpen}
+        preview={props.preview}
+      />
     </div>
   );
 }
@@ -500,123 +687,11 @@ function RunsView({ runs }: { runs: RunRecord[] }): ReactElement {
   );
 }
 
-function SettingsView({
-  rules,
-  onRulesChange,
-  onAddPattern,
-  onRemovePattern,
-}: Pick<
-  WorkspaceProps,
-  'rules' | 'onRulesChange' | 'onAddPattern' | 'onRemovePattern'
->): ReactElement {
-  return (
-    <div className="min-h-0 overflow-auto p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <SettingsIcon className="h-4 w-4 text-accent" />
-        <h1 className="text-[18px] font-semibold text-ink">Settings</h1>
-      </div>
-      <section className="rounded-[14px] border border-line bg-white/76 p-5 shadow-panel">
-        <div className="grid gap-5">
-          <div>
-            <div className="mb-2 text-[12px] font-medium text-ink/82">Default format</div>
-            <SegmentedControl
-              ariaLabel="Settings output format"
-              items={formatItems}
-              onChange={(format) => onRulesChange({ ...rules, format })}
-              selected={rules.format}
-            />
-          </div>
-          <div>
-            <label className="text-[12px] font-medium text-ink/82" htmlFor="settings-max-file-size">
-              Max file size
-            </label>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                className="h-9 w-28 rounded-[9px] border border-line bg-white/80 px-3 py-0 text-[13px] text-ink outline-none focus:border-accent"
-                id="settings-max-file-size"
-                min="0.1"
-                onChange={(event) => onRulesChange({ ...rules, maxFileSizeMb: event.target.value })}
-                step="0.1"
-                type="number"
-                value={rules.maxFileSizeMb}
-              />
-              <span className="text-[12px] text-muted">MB per file</span>
-            </div>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['include', 'exclude'] as const).map((kind) => {
-              const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
-              const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
-
-              return (
-                <div key={kind} className="rounded-[12px] border border-line bg-black/[0.025] p-3">
-                  <label
-                    className="text-[12px] font-medium capitalize text-ink/82"
-                    htmlFor={`settings-${kind}`}
-                  >
-                    {kind} patterns
-                  </label>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      className="h-9 min-w-0 flex-1 rounded-[9px] border border-line bg-white/80 px-3 py-0 text-[13px] text-ink outline-none focus:border-accent"
-                      id={`settings-${kind}`}
-                      onChange={(event) =>
-                        onRulesChange({ ...rules, [inputKey]: event.target.value })
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          onAddPattern(kind);
-                        }
-                      }}
-                      value={rules[inputKey]}
-                    />
-                    <Button onClick={() => onAddPattern(kind)} size="sm">
-                      Add
-                    </Button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {rules[listKey].map((pattern) => (
-                      <button
-                        key={pattern}
-                        className="inline-flex h-7 max-w-full items-center gap-1 rounded-[8px] border border-line bg-white/72 px-2 py-0 text-[12px] text-ink/78"
-                        onClick={() => onRemovePattern(kind, pattern)}
-                        title={`Remove ${pattern}`}
-                        type="button"
-                      >
-                        <span className="truncate">{pattern}</span>
-                        <span aria-hidden="true" className="text-muted">
-                          x
-                        </span>
-                      </button>
-                    ))}
-                    {rules[listKey].length === 0 ? (
-                      <p className="text-[12px] text-muted">No patterns.</p>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 export function Workspace(props: WorkspaceProps): ReactElement {
   return (
     <main className="relative min-h-0 bg-canvas">
       {props.selectedView === 'projects' ? <ProjectsView {...props} /> : null}
       {props.selectedView === 'runs' ? <RunsView runs={props.runs} /> : null}
-      {props.selectedView === 'settings' ? (
-        <SettingsView
-          onAddPattern={props.onAddPattern}
-          onRemovePattern={props.onRemovePattern}
-          onRulesChange={props.onRulesChange}
-          rules={props.rules}
-        />
-      ) : null}
       {props.rulesOpen ? (
         <RulesSheet
           onAddPattern={props.onAddPattern}

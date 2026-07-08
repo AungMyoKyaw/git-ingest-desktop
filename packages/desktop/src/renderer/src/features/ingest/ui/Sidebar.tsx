@@ -1,13 +1,14 @@
 import type { ReactElement } from 'react';
 
 import type { AppState } from '../../../env';
-import { ClockIcon, FolderIcon, SettingsIcon, XIcon } from '../../../shared/icons/Icons';
+import { ClockIcon, FolderIcon, XIcon } from '../../../shared/icons/Icons';
 import { cn } from '../../../shared/lib/cn';
 import type { AppView } from '../model/types';
 
 export type SidebarProps = {
   selectedView: AppView;
   recentProjects: AppState['recentProjects'];
+  onChooseFolder: () => void;
   onViewChange: (view: AppView) => void;
   onRemoveRecentProject: (path: string) => void;
   onSelectRecentProject: (path: string) => void;
@@ -16,7 +17,6 @@ export type SidebarProps = {
 const navItems: Array<{ view: AppView; label: string; icon: typeof FolderIcon }> = [
   { view: 'projects', label: 'Projects', icon: FolderIcon },
   { view: 'runs', label: 'Runs', icon: ClockIcon },
-  { view: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 function shortenPath(path: string) {
@@ -32,6 +32,7 @@ function shortenPath(path: string) {
 export function Sidebar({
   selectedView,
   recentProjects,
+  onChooseFolder,
   onViewChange,
   onRemoveRecentProject,
   onSelectRecentProject,
@@ -50,7 +51,15 @@ export function Sidebar({
         </div>
       </div>
       <section className="px-3 pt-4">
-        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">
+        <button
+          className="mb-4 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] bg-white/76 px-3 text-[13px] font-semibold text-ink/88 ring-1 ring-line transition hover:bg-black/[0.045] active:translate-y-px focus:outline-none focus:ring-2 focus:ring-accent/40"
+          onClick={onChooseFolder}
+          type="button"
+        >
+          <FolderIcon className="h-4 w-4 shrink-0" />
+          <span>New Project</span>
+        </button>
+        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
           Library
         </div>
         <div className="space-y-0.5">
@@ -78,7 +87,7 @@ export function Sidebar({
         </div>
       </section>
       <section className="min-h-0 flex-1 px-3 pt-4">
-        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">
+        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
           Recent Projects
         </div>
         <div className="min-h-0 space-y-0.5 overflow-auto">

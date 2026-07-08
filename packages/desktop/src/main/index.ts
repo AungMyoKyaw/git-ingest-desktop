@@ -24,11 +24,13 @@ function createMainWindow() {
     title: 'Git-Ingest',
     width: 1280,
     height: 860,
-    minWidth: 960,
-    minHeight: 680,
+    minWidth: 1120,
+    minHeight: 720,
     show: false,
     backgroundColor: '#fbfcfe',
     icon: appIconPath,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 17 } : undefined,
     webPreferences: createBrowserWindowWebPreferences(currentDir),
   });
 

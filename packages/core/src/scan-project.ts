@@ -269,7 +269,8 @@ async function collectProject(
 
       if (
         excludePatterns.length > 0 &&
-        (isIgnoredPath(relativePath, excludeMatcher) || matchesPattern(relativePath, excludePatterns))
+        (isIgnoredPath(relativePath, excludeMatcher) ||
+          matchesPattern(relativePath, excludePatterns))
       ) {
         skippedFiles.push({ relativePath, reason: 'exclude-pattern' });
         continue;

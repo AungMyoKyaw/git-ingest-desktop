@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   bytesToMegabytes,
+  deriveAppStatus,
   formatBytes,
+  getPrimaryActionState,
+  getStatusBarText,
   getWorkflowSteps,
   makeRequestKey,
   megabytesToBytes,
+  normalizePatternAddition,
   projectNameFromPath,
   toPreviewMetrics,
 } from './view-model';
@@ -78,12 +82,11 @@ describe('renderer view-model helpers', () => {
     });
   });
 
-  it('marks workflow steps from project selection through export', () => {
+  it('marks workflow steps from project selection through export without a rules step', () => {
     expect(
       getWorkflowSteps({ hasProject: true, hasPreview: true, canGenerate: true, hasOutput: false }),
     ).toEqual([
       { label: 'Project', status: 'complete' },
-      { label: 'Rules', status: 'complete' },
       { label: 'Preview', status: 'complete' },
       { label: 'Generate', status: 'current' },
       { label: 'Export', status: 'pending' },
@@ -93,10 +96,157 @@ describe('renderer view-model helpers', () => {
       getWorkflowSteps({ hasProject: true, hasPreview: true, canGenerate: false, hasOutput: true }),
     ).toEqual([
       { label: 'Project', status: 'complete' },
-      { label: 'Rules', status: 'complete' },
       { label: 'Preview', status: 'complete' },
       { label: 'Generate', status: 'complete' },
       { label: 'Export', status: 'current' },
     ]);
+  });
+
+  it('derives one normalized app status for visual state', () => {
+    expect(
+      deriveAppStatus({
+        busy: false,
+        error: null,
+        generated: null,
+        hasProject: false,
+        phase: '',
+        preview: null,
+      }),
+    ).toBe('empty');
+    expect(
+      deriveAppStatus({
+        busy: false,
+        error: null,
+        generated: null,
+        hasProject: true,
+        phase: '',
+        preview: null,
+      }),
+    ).toBe('previewing');
+    expect(
+      deriveAppStatus({
+        busy: true,
+        error: null,
+        generated: null,
+        hasProject: true,
+        phase: 'Scanning preview',
+        preview: null,
+      }),
+    ).toBe('previewing');
+    expect(
+      deriveAppStatus({
+        busy: false,
+        error: null,
+        generated: null,
+        hasProject: true,
+        phase: '',
+        preview,
+      }),
+    ).toBe('ready');
+    expect(
+      deriveAppStatus({
+        busy: true,
+        error: null,
+        generated: null,
+        hasProject: true,
+        phase: 'Generating output',
+        preview,
+      }),
+    ).toBe('generating');
+    expect(
+      deriveAppStatus({
+        busy: false,
+        error: null,
+        generated: {
+          ...preview,
+          format: 'markdown',
+          output: 'content',
+          outputBytes: 7,
+          tokenEstimate: 4,
+        },
+        hasProject: true,
+        phase: 'done',
+        preview,
+      }),
+    ).toBe('generated');
+    expect(
+      deriveAppStatus({
+        busy: false,
+        error: { code: 'E_PREVIEW', userMessage: 'Preview failed', detail: 'stack' },
+        generated: null,
+        hasProject: true,
+        phase: '',
+        preview,
+      }),
+    ).toBe('error');
+  });
+
+  it('derives chrome primary action from app state', () => {
+    expect(
+      getPrimaryActionState({
+        appStatus: 'empty',
+        canGenerate: false,
+        hasOutput: false,
+      }),
+    ).toEqual({ kind: 'choose-folder', label: 'Choose Folder', disabled: false });
+    expect(
+      getPrimaryActionState({
+        appStatus: 'ready',
+        canGenerate: true,
+        hasOutput: false,
+      }),
+    ).toEqual({ kind: 'generate', label: 'Generate', disabled: false });
+    expect(
+      getPrimaryActionState({
+        appStatus: 'generating',
+        canGenerate: false,
+        hasOutput: false,
+      }),
+    ).toEqual({ kind: 'cancel', label: 'Cancel', disabled: false });
+    expect(
+      getPrimaryActionState({
+        appStatus: 'generated',
+        canGenerate: false,
+        hasOutput: true,
+      }),
+    ).toEqual({ kind: 'copy', label: 'Copy', disabled: false });
+  });
+
+  it('normalizes pattern additions by trimming and rejecting duplicates', () => {
+    expect(normalizePatternAddition(' src/**/*.ts ', ['README.md'])).toEqual({
+      patterns: ['README.md', 'src/**/*.ts'],
+      accepted: true,
+      message: '',
+    });
+    expect(normalizePatternAddition('src/**/*.ts', ['src/**/*.ts'])).toEqual({
+      patterns: ['src/**/*.ts'],
+      accepted: false,
+      message: 'Pattern already exists.',
+    });
+    expect(normalizePatternAddition('   ', [])).toEqual({
+      patterns: [],
+      accepted: false,
+      message: '',
+    });
+  });
+
+  it('formats status bar text without fixed column assumptions', () => {
+    expect(
+      getStatusBarText({ appStatus: 'empty', folderPath: '', preview: null, generated: null }),
+    ).toEqual({
+      left: 'No folder selected',
+      right: 'No preview',
+    });
+    expect(
+      getStatusBarText({
+        appStatus: 'ready',
+        folderPath: '/tmp/git-ingest',
+        preview,
+        generated: null,
+      }),
+    ).toEqual({
+      left: 'Ready · /tmp/git-ingest',
+      right: '2 files · 12,345 tokens · 639.0 KB',
+    });
   });
 });

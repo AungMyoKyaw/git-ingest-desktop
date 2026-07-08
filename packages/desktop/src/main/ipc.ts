@@ -33,7 +33,7 @@ interface RegisterIpcHandlersOptions {
 }
 
 function ensureTrustedSender(event: IpcMainInvokeEvent, isTrustedSender: (url: string) => boolean) {
-  if (!isTrustedSender(event.senderFrame.url)) {
+  if (!event.senderFrame || !isTrustedSender(event.senderFrame.url)) {
     throw new Error('Untrusted IPC sender');
   }
 }

@@ -11,9 +11,12 @@ import type {
 import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types';
 import {
   bytesToMegabytes,
+  deriveAppStatus,
+  getPrimaryActionState,
   getWorkflowSteps,
   makeRequestKey,
   megabytesToBytes,
+  normalizePatternAddition,
 } from './features/ingest/model/view-model';
 import { AppChrome } from './features/ingest/ui/AppChrome';
 import { Inspector } from './features/ingest/ui/Inspector';
@@ -67,6 +70,8 @@ export function App() {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
+  const [inlineFeedback, setInlineFeedback] = useState('');
+  const [inspectorOpen, setInspectorOpen] = useState(false);
 
   const activeRequestIdRef = useRef<string | null>(null);
   const activeGenerationKeyRef = useRef<string | null>(null);
@@ -203,6 +208,27 @@ export function App() {
   const requestKey = useMemo(() => makeRequestKey(requestPayload), [requestPayload]);
   requestKeyRef.current = requestKey;
   const readyToGenerate = Boolean(preview) && lastPreviewKey === requestKey && !busy;
+  const appStatus = useMemo(
+    () =>
+      deriveAppStatus({
+        busy,
+        error,
+        generated,
+        hasProject: Boolean(folderPath),
+        phase,
+        preview,
+      }),
+    [busy, error, folderPath, generated, phase, preview],
+  );
+  const primaryAction = useMemo(
+    () =>
+      getPrimaryActionState({
+        appStatus,
+        canGenerate: readyToGenerate,
+        hasOutput: Boolean(generated?.output),
+      }),
+    [appStatus, generated?.output, readyToGenerate],
+  );
   const workflowSteps = useMemo(
     () =>
       getWorkflowSteps({
@@ -276,6 +302,7 @@ export function App() {
   function resetFeedback() {
     setMessage('');
     setError(null);
+    setInlineFeedback('');
   }
 
   function resetStaleProjectState() {
@@ -327,16 +354,23 @@ export function App() {
     const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
     const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
     const value = rules[inputKey].trim();
+    const normalized = normalizePatternAddition(value, rules[listKey]);
 
-    if (!value) {
+    if (!normalized.accepted) {
+      if (normalized.message) {
+        setMessage(normalized.message);
+        setInlineFeedback('');
+      }
       return;
     }
 
     setRules((current) => ({
       ...current,
       [inputKey]: '',
-      [listKey]: [...current[listKey], value],
+      [listKey]: normalized.patterns,
     }));
+    setMessage('Rules changed. Preview refreshed. Output cleared.');
+    setInlineFeedback('');
   }
 
   function removePattern(kind: 'include' | 'exclude', pattern: string) {
@@ -350,6 +384,8 @@ export function App() {
       ...current,
       [listKey]: current[listKey].filter((entry) => entry !== pattern),
     }));
+    setMessage('Rules changed. Preview refreshed. Output cleared.');
+    setInlineFeedback('');
   }
 
   function handleRulesChange(nextRules: RulesDraft) {
@@ -358,7 +394,16 @@ export function App() {
       return;
     }
 
+    const maxFileSize = Number(nextRules.maxFileSizeMb);
     setRules(nextRules);
+    setGenerated(null);
+    setSavedFilePath(null);
+    setInlineFeedback('');
+    setMessage(
+      Number.isFinite(maxFileSize) && maxFileSize > 0
+        ? 'Rules changed. Preview refreshed. Output cleared.'
+        : 'Max file size must be positive.',
+    );
   }
 
   async function generateOutput() {
@@ -408,6 +453,7 @@ export function App() {
     const result = await window.gitIngest.copyOutput(generated.output);
     if (result.ok) {
       setMessage('Copied output to clipboard.');
+      setInlineFeedback('Copied.');
       setError(null);
       return;
     }
@@ -431,6 +477,7 @@ export function App() {
     if (result.ok && result.filePath) {
       setSavedFilePath(result.filePath);
       setMessage(`Saved output to ${result.filePath}`);
+      setInlineFeedback('Saved.');
       setError(null);
       return;
     }
@@ -496,6 +543,7 @@ export function App() {
     setFolderPath(path);
     resetFeedback();
     resetStaleProjectState();
+    setPreviewRefreshToken((current) => current + 1);
     setSelectedView('projects');
   }
 
@@ -519,9 +567,22 @@ export function App() {
   return (
     <div className="h-dvh overflow-hidden bg-window text-ink selection:bg-accent/30">
       <div className="relative grid h-full grid-rows-[52px_1fr_26px] overflow-hidden bg-window">
-        <AppChrome steps={workflowSteps} />
-        <div className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)_320px]">
+        <AppChrome
+          canSave={Boolean(generated?.output)}
+          hasOutput={Boolean(generated?.output)}
+          inspectorOpen={inspectorOpen}
+          onCancel={() => void cancelGeneration()}
+          onChooseFolder={() => void chooseFolder()}
+          onCopy={() => void copyOutput()}
+          onGenerate={() => void generateOutput()}
+          onSave={() => void saveOutput()}
+          onToggleInspector={() => setInspectorOpen((current) => !current)}
+          primaryAction={primaryAction}
+          steps={workflowSteps}
+        />
+        <div className="app-shell-grid grid min-h-0">
           <Sidebar
+            onChooseFolder={() => void chooseFolder()}
             onRemoveRecentProject={removeRecentProject}
             onSelectRecentProject={selectRecentProject}
             onViewChange={setSelectedView}
@@ -562,6 +623,7 @@ export function App() {
             onRemovePattern={removePattern}
             onRulesChange={handleRulesChange}
             onSave={() => void saveOutput()}
+            inlineFeedback={inlineFeedback}
             phase={phase}
             preview={preview}
             progressCounts={progressCounts}
@@ -572,9 +634,35 @@ export function App() {
             savedFilePath={savedFilePath}
             selectedView={selectedView}
           />
-          <Inspector error={error} generated={generated} message={message} preview={preview} />
+          <div className="desktop-inspector min-h-0">
+            <Inspector
+              error={error}
+              generated={generated}
+              message={message}
+              preview={preview}
+              savedFilePath={savedFilePath}
+            />
+          </div>
         </div>
-        <StatusBar folderPath={folderPath} generated={generated} phase={phase} preview={preview} />
+        {inspectorOpen ? (
+          <div className="inspector-drawer absolute inset-y-[52px] right-0 z-40 w-[360px] max-w-[92vw] border-l border-line shadow-window">
+            <Inspector
+              drawer
+              error={error}
+              generated={generated}
+              message={message}
+              onCloseDrawer={() => setInspectorOpen(false)}
+              preview={preview}
+              savedFilePath={savedFilePath}
+            />
+          </div>
+        ) : null}
+        <StatusBar
+          appStatus={appStatus}
+          folderPath={folderPath}
+          generated={generated}
+          preview={preview}
+        />
       </div>
     </div>
   );

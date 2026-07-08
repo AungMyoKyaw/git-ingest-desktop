@@ -1,6 +1,8 @@
 import type { DesktopError, GenerateResult, PreviewResult } from '../../../env';
 
-export type AppView = 'projects' | 'runs' | 'settings';
+export type AppView = 'projects' | 'runs';
+
+export type AppStatus = 'empty' | 'previewing' | 'ready' | 'generating' | 'generated' | 'error';
 
 export type RunRecord = {
   id: string;

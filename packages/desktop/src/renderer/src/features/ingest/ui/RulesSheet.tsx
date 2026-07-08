@@ -60,6 +60,11 @@ function PatternEditor({
       <label className="text-[12px] font-medium text-ink/82" htmlFor={`${kind}-patterns`}>
         {label}
       </label>
+      <p className="mt-1 text-[12px] leading-5 text-muted">
+        {kind === 'include'
+          ? 'Only include matching paths. Leave empty to include all non-ignored files.'
+          : 'Exclude matching paths from the generated context.'}
+      </p>
       <div className="mt-2 flex gap-2">
         <input
           className="h-9 min-w-0 flex-1 rounded-[9px] border border-line bg-white/80 px-3 py-0 text-[13px] text-ink outline-none focus:border-accent"
@@ -85,6 +90,7 @@ function PatternEditor({
           {patterns.map((pattern) => (
             <button
               key={pattern}
+              aria-label={`Remove ${kind} pattern ${pattern}`}
               className="inline-flex h-7 max-w-full items-center gap-1 rounded-[8px] border border-line bg-black/[0.035] px-2 py-0 text-[12px] text-ink/78"
               onClick={() => onRemovePattern(kind, pattern)}
               title={`Remove ${pattern}`}
@@ -213,12 +219,16 @@ export function RulesSheet({
                 id="max-file-size"
                 min="0.1"
                 onChange={(event) => onRulesChange({ ...rules, maxFileSizeMb: event.target.value })}
+                aria-describedby="max-file-size-help"
                 step="0.1"
                 type="number"
                 value={rules.maxFileSizeMb}
               />
               <span className="text-[12px] text-muted">MB per file</span>
             </div>
+            <p className="mt-1 text-[12px] leading-5 text-muted" id="max-file-size-help">
+              Must be positive. Files above this size are skipped.
+            </p>
           </div>
 
           <PatternEditor
