@@ -38,6 +38,30 @@ describe('previewProject', () => {
     expect(result.entries.find((entry) => entry.path === 'README.md')?.ignored).toBe(true);
   });
 
+  it('applies gitignore directory patterns before walking into ignored folders', async () => {
+    await mkdir(path.join(rootPath, 'generated'));
+    await writeFile(path.join(rootPath, '.gitignore'), 'generated/\n');
+    await writeFile(path.join(rootPath, 'generated', 'secret.ts'), 'export const secret = true;\n');
+
+    const result = await generateProject({ rootPath, format: 'markdown' });
+
+    expect(result.output).not.toContain('generated/secret.ts');
+    expect(result.ignoredDirectories).toContainEqual({
+      path: 'generated',
+      reason: 'gitignore',
+    });
+  });
+
+  it('uses git-ingest default ignore patterns for generated outputs and binary assets', async () => {
+    await writeFile(path.join(rootPath, 'git-ingest-output.md'), '# previous ingest\n');
+    await writeFile(path.join(rootPath, 'logo.png'), 'pretend image text\n');
+
+    const result = await generateProject({ rootPath, format: 'markdown' });
+
+    expect(result.output).not.toContain('git-ingest-output.md');
+    expect(result.output).not.toContain('logo.png');
+  });
+
   it('skips files above max size', async () => {
     const result = await previewProject({ rootPath, maxFileSizeBytes: 2 });
     expect(result.skippedFiles).toBeGreaterThan(0);

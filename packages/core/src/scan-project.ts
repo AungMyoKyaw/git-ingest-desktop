@@ -5,7 +5,10 @@ import { AppError, GitIngestError } from './errors.js';
 import { generateMarkdown } from './generate-markdown.js';
 import { generateText } from './generate-text.js';
 import {
+  createIgnoreMatcher,
+  getDefaultIgnorePatterns,
   isDefaultIgnoredDirectory,
+  isIgnoredPath,
   matchesPattern,
   normalizePatterns,
   readGitIgnorePatterns,
@@ -190,6 +193,11 @@ async function collectProject(
   const excludePatterns = normalizePatterns(options.excludePatterns);
   const maxFileSizeBytes = options.maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE;
   const gitIgnorePatterns = await readGitIgnorePatterns(rootDir);
+  const defaultIgnoreMatcher = createIgnoreMatcher(getDefaultIgnorePatterns());
+  const gitIgnoreMatcher = createIgnoreMatcher(gitIgnorePatterns);
+  const excludeMatcher = createIgnoreMatcher(excludePatterns);
+  const includeMatcher =
+    includePatterns.length > 0 ? createIgnoreMatcher(includePatterns) : undefined;
 
   await validateRootDirectory(rootDir);
   emit(options.onProgress, { phase: 'scanning' });
@@ -209,8 +217,23 @@ async function collectProject(
       const relativePath = toRelativePath(rootDir, fullPath);
 
       if (entry.isDirectory()) {
-        if (isDefaultIgnoredDirectory(entry.name)) {
+        if (
+          isDefaultIgnoredDirectory(entry.name) ||
+          isIgnoredPath(relativePath, defaultIgnoreMatcher, true)
+        ) {
           ignoredDirectories.push({ path: relativePath, reason: 'default-ignore' });
+          totalFiles += await countFiles(fullPath);
+          continue;
+        }
+
+        if (gitIgnorePatterns.length > 0 && isIgnoredPath(relativePath, gitIgnoreMatcher, true)) {
+          ignoredDirectories.push({ path: relativePath, reason: 'gitignore' });
+          totalFiles += await countFiles(fullPath);
+          continue;
+        }
+
+        if (excludePatterns.length > 0 && isIgnoredPath(relativePath, excludeMatcher, true)) {
+          ignoredDirectories.push({ path: relativePath, reason: 'exclude-pattern' });
           totalFiles += await countFiles(fullPath);
           continue;
         }
@@ -225,17 +248,29 @@ async function collectProject(
 
       totalFiles += 1;
 
-      if (gitIgnorePatterns.length > 0 && matchesPattern(relativePath, gitIgnorePatterns)) {
+      if (isIgnoredPath(relativePath, defaultIgnoreMatcher)) {
         skippedFiles.push({ relativePath, reason: 'gitignore' });
         continue;
       }
 
-      if (includePatterns.length > 0 && !matchesPattern(relativePath, includePatterns)) {
+      if (gitIgnorePatterns.length > 0 && isIgnoredPath(relativePath, gitIgnoreMatcher)) {
+        skippedFiles.push({ relativePath, reason: 'gitignore' });
+        continue;
+      }
+
+      if (
+        includePatterns.length > 0 &&
+        includeMatcher &&
+        !isIgnoredPath(relativePath, includeMatcher)
+      ) {
         skippedFiles.push({ relativePath, reason: 'include-pattern' });
         continue;
       }
 
-      if (excludePatterns.length > 0 && matchesPattern(relativePath, excludePatterns)) {
+      if (
+        excludePatterns.length > 0 &&
+        (isIgnoredPath(relativePath, excludeMatcher) || matchesPattern(relativePath, excludePatterns))
+      ) {
         skippedFiles.push({ relativePath, reason: 'exclude-pattern' });
         continue;
       }

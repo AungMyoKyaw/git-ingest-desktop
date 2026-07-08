@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import ignore from 'ignore';
 import { minimatch } from 'minimatch';
 
 const DEFAULT_IGNORED_DIRECTORIES = new Set([
@@ -12,6 +13,86 @@ const DEFAULT_IGNORED_DIRECTORIES = new Set([
   'out',
   'build',
 ]);
+
+const DEFAULT_IGNORE_PATTERNS = [
+  'git-ingest-*.txt',
+  'git-ingest-*.json',
+  'git-ingest-*.md',
+  'package-lock.json',
+  '.git/',
+  '.git',
+  '.svn/',
+  '.hg/',
+  '.gitignore',
+  'node_modules/',
+  'node_modules',
+  'bower_components/',
+  'jspm_packages/',
+  'web_modules/',
+  'vendor/',
+  '.npm/',
+  '.cache/',
+  '.next/',
+  '.nuxt/',
+  '.parcel-cache/',
+  '.tmp/',
+  '.virtualenv/',
+  '.vs/',
+  '.vscode/',
+  '__pycache__/',
+  'coverage/',
+  'nyc_output/',
+  'target/',
+  'temp/',
+  'tmp/',
+  'venv/',
+  'dist/',
+  'dist',
+  'build/',
+  'out/',
+  'bin/',
+  'obj/',
+  '.DS_Store',
+  '*.log',
+  'logs/',
+  'npm-debug.log*',
+  'yarn-debug.log*',
+  'yarn-error.log*',
+  '.env',
+  '.env.*',
+  '!.env.example',
+  '*.jpg',
+  '*.jpeg',
+  '*.png',
+  '*.gif',
+  '*.svg',
+  '*.webp',
+  '*.ico',
+  '*.pdf',
+  '*.zip',
+  '*.tar',
+  '*.gz',
+  '*.rar',
+  '*.7z',
+  '*.mp4',
+  '*.avi',
+  '*.mov',
+  '*.mp3',
+  '*.wav',
+  '*.exe',
+  '*.dll',
+  '*.so',
+  '*.dylib',
+  '*.class',
+  '*.jar',
+  '.eslintcache',
+  '.stylelintcache',
+  '*.tsbuildinfo',
+  '.pnpm/',
+  '.output/',
+  '.vercel/',
+  '.netlify/',
+];
 
 function normalizePattern(pattern: string) {
   return pattern.trim().replaceAll('\\', '/');
@@ -25,6 +106,27 @@ export function matchesPattern(relativePath: string, patterns: string[]) {
   return patterns.some((pattern) =>
     minimatch(relativePath, normalizePattern(pattern), { dot: true, matchBase: true }),
   );
+}
+
+export function createIgnoreMatcher(patterns: string[]) {
+  return ignore().add(patterns.map(normalizePattern));
+}
+
+export function getDefaultIgnorePatterns() {
+  return [...DEFAULT_IGNORE_PATTERNS];
+}
+
+export function isIgnoredPath(
+  relativePath: string,
+  matcher: ReturnType<typeof createIgnoreMatcher>,
+  isDirectory = false,
+) {
+  const normalizedPath = normalizePattern(relativePath);
+  if (matcher.ignores(normalizedPath)) {
+    return true;
+  }
+
+  return isDirectory ? matcher.ignores(`${normalizedPath}/`) : false;
 }
 
 export async function readGitIgnorePatterns(rootDir: string) {

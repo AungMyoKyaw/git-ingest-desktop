@@ -16,6 +16,7 @@
     "test": "vitest run src"
   },
   "dependencies": {
+    "ignore": "^7.0.5",
     "minimatch": "^10.2.5"
   }
 }

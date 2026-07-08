@@ -33,7 +33,7 @@ export interface SkippedFile {
 
 export interface IgnoredDirectory {
   path: string;
-  reason: 'default-ignore';
+  reason: 'default-ignore' | 'gitignore' | 'exclude-pattern';
 }
 
 export interface FileTypeSummary {
