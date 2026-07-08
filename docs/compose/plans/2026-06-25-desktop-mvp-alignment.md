@@ -23,6 +23,7 @@
 **Covers:** [S1, S2, S4, S5, S6, S9, S10]
 
 **Files:**
+
 - Modify: `packages/core/src/types.ts`
 - Modify: `packages/core/src/scan-project.ts`
 - Modify: `packages/desktop/src/main/generation.ts`
@@ -33,35 +34,36 @@
 - Create: `packages/desktop/src/main/generation.test.ts`
 
 **Interfaces:**
+
 - Consumes: `previewProject(options: ScanProjectOptions): Promise<ProjectSummary>`, `generateProjectOutput(options: ScanProjectOptions): Promise<GenerateProjectResult>`
 - Produces: preview payloads that include `estimatedTokenCount`; generation-finished payloads that include `savedOutputPath: string | null`; persisted app state that can remember the latest generated file path per project
 
 - [ ] **Step 1: Write the failing desktop contract tests**
 
 ```ts
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest';
 
-import { createGenerationManager } from './generation.js'
+import { createGenerationManager } from './generation.js';
 
 describe('createGenerationManager', () => {
   it('includes the saved output path on success messages', async () => {
-    const finished = vi.fn()
+    const finished = vi.fn();
     const manager = createGenerationManager({
       outputDirectory: '/tmp/git-ingest-tests',
       onProgress: vi.fn(),
-      onFinished: finished
-    })
+      onFinished: finished,
+    });
 
-    await manager.start({ rootDir: '/tmp/project', format: 'markdown' })
+    await manager.start({ rootDir: '/tmp/project', format: 'markdown' });
 
     expect(finished).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'success',
-        savedOutputPath: expect.stringMatching(/git-ingest-output\.md$/)
-      })
-    )
-  })
-})
+        savedOutputPath: expect.stringMatching(/git-ingest-output\.md$/),
+      }),
+    );
+  });
+});
 ```
 
 - [ ] **Step 2: Run the desktop contract test to verify failure**
@@ -73,36 +75,47 @@ Expected: FAIL because `createGenerationManager` does not yet write a generated 
 
 ```ts
 export interface ProjectSummary {
-  projectName: string
-  rootDir: string
-  totalFiles: number
-  includedFiles: IncludedFile[]
-  skippedFiles: SkippedFile[]
-  ignoredDirectories: IgnoredDirectory[]
-  fileTypes: FileTypeSummary[]
-  estimatedTokenCount: number
-  estimatedOutputBytes: number
-  warnings: string[]
+  projectName: string;
+  rootDir: string;
+  totalFiles: number;
+  includedFiles: IncludedFile[];
+  skippedFiles: SkippedFile[];
+  ignoredDirectories: IgnoredDirectory[];
+  fileTypes: FileTypeSummary[];
+  estimatedTokenCount: number;
+  estimatedOutputBytes: number;
+  warnings: string[];
 }
 
 export type GenerationFinishedMessage =
   | {
-      requestId: string
-      status: 'success'
-      result: GenerateProjectResult
-      savedOutputPath: string | null
+      requestId: string;
+      status: 'success';
+      result: GenerateProjectResult;
+      savedOutputPath: string | null;
     }
-  | { requestId: string; status: 'cancelled'; error: { code: string; userMessage: string; detail: string | null } }
-  | { requestId: string; status: 'error'; error: { code: string; userMessage: string; detail: string | null } }
+  | {
+      requestId: string;
+      status: 'cancelled';
+      error: { code: string; userMessage: string; detail: string | null };
+    }
+  | {
+      requestId: string;
+      status: 'error';
+      error: { code: string; userMessage: string; detail: string | null };
+    };
 ```
 
 ```ts
 async function writeGeneratedOutput(outputDirectory: string, result: GenerateProjectResult) {
-  const extension = result.format === 'text' ? 'txt' : 'md'
-  const filePath = path.join(outputDirectory, `${result.projectName}-git-ingest-output.${extension}`)
-  await mkdir(outputDirectory, { recursive: true })
-  await writeFile(filePath, result.output, 'utf8')
-  return filePath
+  const extension = result.format === 'text' ? 'txt' : 'md';
+  const filePath = path.join(
+    outputDirectory,
+    `${result.projectName}-git-ingest-output.${extension}`,
+  );
+  await mkdir(outputDirectory, { recursive: true });
+  await writeFile(filePath, result.output, 'utf8');
+  return filePath;
 }
 ```
 
@@ -110,18 +123,18 @@ async function writeGeneratedOutput(outputDirectory: string, result: GeneratePro
 
 ```ts
 export interface RecentProject {
-  path: string
-  name: string
-  lastOpenedAt: string
-  lastGeneratedFilePath?: string | null
+  path: string;
+  name: string;
+  lastOpenedAt: string;
+  lastGeneratedFilePath?: string | null;
 }
 
 export interface GenerateResult extends PreviewResult {
-  format: 'markdown' | 'text'
-  output: string
-  outputBytes: number
-  tokenEstimate: number
-  savedOutputPath: string | null
+  format: 'markdown' | 'text';
+  output: string;
+  outputBytes: number;
+  tokenEstimate: number;
+  savedOutputPath: string | null;
 }
 ```
 
@@ -129,12 +142,12 @@ export interface GenerateResult extends PreviewResult {
 onFinished: async (message) => {
   if (message.status === 'success') {
     await updateAppState(userDataPath, (state) =>
-      rememberRecentProject(state, message.result.rootDir, message.savedOutputPath)
-    )
+      rememberRecentProject(state, message.result.rootDir, message.savedOutputPath),
+    );
   }
 
-  window.webContents.send('desktop:generation-finished', message)
-}
+  window.webContents.send('desktop:generation-finished', message);
+};
 ```
 
 - [ ] **Step 5: Re-run the focused desktop contract test**
@@ -147,35 +160,49 @@ Expected: PASS with a success message that includes `savedOutputPath`
 **Covers:** [S2, S4, S5, S7, S8, S9, S10]
 
 **Files:**
+
 - Modify: `packages/desktop/src/renderer/src/App.tsx`
 - Modify: `packages/desktop/src/renderer/src/styles.css`
 - Modify: `packages/desktop/src/renderer/src/env.d.ts`
 - Create: `packages/desktop/src/renderer/src/app-view-model.test.ts`
 
 **Interfaces:**
+
 - Consumes: `window.gitIngest.getState()`, `window.gitIngest.chooseFolder()`, `window.gitIngest.preview()`, `window.gitIngest.generate()`, `window.gitIngest.onGenerationFinished()`
 - Produces: renderer behavior where folder selection, drag-and-drop, and recent-project selection all trigger preview automatically; generated-state actions use the latest `savedOutputPath`
 
 - [ ] **Step 1: Write the failing renderer view-model test**
 
 ```ts
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
-import { deriveAppViewState } from './App.js'
+import { deriveAppViewState } from './App.js';
 
 describe('deriveAppViewState', () => {
   it('treats a selected folder with no preview as previewing', () => {
     expect(
-      deriveAppViewState({ folderPath: '/tmp/project', preview: null, generated: null, busy: true, error: null })
-    ).toBe('previewing')
-  })
+      deriveAppViewState({
+        folderPath: '/tmp/project',
+        preview: null,
+        generated: null,
+        busy: true,
+        error: null,
+      }),
+    ).toBe('previewing');
+  });
 
   it('treats a previewed folder with no generated output as ready', () => {
     expect(
-      deriveAppViewState({ folderPath: '/tmp/project', preview: { totalFiles: 4 }, generated: null, busy: false, error: null })
-    ).toBe('ready')
-  })
-})
+      deriveAppViewState({
+        folderPath: '/tmp/project',
+        preview: { totalFiles: 4 },
+        generated: null,
+        busy: false,
+        error: null,
+      }),
+    ).toBe('ready');
+  });
+});
 ```
 
 - [ ] **Step 2: Run the renderer test to verify failure**
@@ -186,43 +213,43 @@ Expected: FAIL because `deriveAppViewState` does not exist yet
 - [ ] **Step 3: Add the minimum renderer state helpers and auto-preview flow**
 
 ```ts
-export type AppViewState = 'empty' | 'previewing' | 'ready' | 'generating' | 'generated' | 'error'
+export type AppViewState = 'empty' | 'previewing' | 'ready' | 'generating' | 'generated' | 'error';
 
 export function deriveAppViewState(input: {
-  folderPath: string
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  busy: boolean
-  error: DesktopError | null
+  folderPath: string;
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  busy: boolean;
+  error: DesktopError | null;
 }): AppViewState {
-  if (input.error) return 'error'
-  if (!input.folderPath) return 'empty'
-  if (input.busy && !input.generated) return input.preview ? 'generating' : 'previewing'
-  if (input.generated) return 'generated'
-  if (input.preview) return 'ready'
-  return 'previewing'
+  if (input.error) return 'error';
+  if (!input.folderPath) return 'empty';
+  if (input.busy && !input.generated) return input.preview ? 'generating' : 'previewing';
+  if (input.generated) return 'generated';
+  if (input.preview) return 'ready';
+  return 'previewing';
 }
 ```
 
 ```ts
 async function loadPreview(nextFolderPath: string) {
-  resetFeedback()
-  setBusy(true)
-  setPhase('Scanning project')
-  setFolderPath(nextFolderPath)
-  setPreview(null)
-  setGenerated(null)
+  resetFeedback();
+  setBusy(true);
+  setPhase('Scanning project');
+  setFolderPath(nextFolderPath);
+  setPreview(null);
+  setGenerated(null);
 
-  const result = await window.gitIngest.preview({ ...requestPayload, rootDir: nextFolderPath })
+  const result = await window.gitIngest.preview({ ...requestPayload, rootDir: nextFolderPath });
 
-  setBusy(false)
-  setPhase('')
+  setBusy(false);
+  setPhase('');
   if (!result.ok) {
-    setError(result.error)
-    return
+    setError(result.error);
+    return;
   }
 
-  setPreview(result.result)
+  setPreview(result.result);
 }
 ```
 
@@ -278,11 +305,12 @@ async function loadPreview(nextFolderPath: string) {
 
 ```ts
 async function handleRecentProject(path: string) {
-  await loadPreview(path)
+  await loadPreview(path);
 }
 
-const selectedRecentProject = recentProjects.find((entry) => entry.path === folderPath)
-const resolvedSavedPath = generated?.savedOutputPath ?? selectedRecentProject?.lastGeneratedFilePath ?? null
+const selectedRecentProject = recentProjects.find((entry) => entry.path === folderPath);
+const resolvedSavedPath =
+  generated?.savedOutputPath ?? selectedRecentProject?.lastGeneratedFilePath ?? null;
 ```
 
 - [ ] **Step 6: Re-run the focused renderer test**
@@ -295,12 +323,14 @@ Expected: PASS with the new view-state helper exported from `App.tsx`
 **Covers:** [S3, S5, S6, S8, S9, S11]
 
 **Files:**
+
 - Modify: `packages/desktop/package.json`
 - Modify: `packages/desktop/src/main/generation.test.ts`
 - Modify: `packages/desktop/src/renderer/src/drop.test.ts`
 - Modify: `packages/core/src/scan-project.test.ts`
 
 **Interfaces:**
+
 - Consumes: the updated preview contract, generation success payload, and renderer helper exports from Tasks 1 and 2
 - Produces: a passing desktop test command, a passing workspace test command, and a successful workspace build
 
@@ -308,13 +338,13 @@ Expected: PASS with the new view-state helper exported from `App.tsx`
 
 ```ts
 it('returns an estimated token count during preview', async () => {
-  const result = await previewProject({ rootDir: fixtureDir })
-  expect(result.estimatedTokenCount).toBeGreaterThan(0)
-})
+  const result = await previewProject({ rootDir: fixtureDir });
+  expect(result.estimatedTokenCount).toBeGreaterThan(0);
+});
 
 it('keeps folder drops eligible for automatic preview', () => {
-  expect(resolveDropSelection(validFolderDrop).kind).toBe('folder')
-})
+  expect(resolveDropSelection(validFolderDrop).kind).toBe('folder');
+});
 ```
 
 - [ ] **Step 2: Run the relevant targeted test files**

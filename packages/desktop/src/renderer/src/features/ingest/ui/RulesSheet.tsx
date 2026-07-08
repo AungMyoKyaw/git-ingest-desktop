@@ -1,21 +1,21 @@
-import { useEffect, useRef, type ReactElement } from 'react'
+import { useEffect, useRef, type ReactElement } from 'react';
 
-import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
-import { Button } from '../../../shared/ui/Button'
-import type { RulesDraft } from '../model/types'
+import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
+import { Button } from '../../../shared/ui/Button';
+import type { RulesDraft } from '../model/types';
 
 export type RulesSheetProps = {
-  rules: RulesDraft
-  onRulesChange: (rules: RulesDraft) => void
-  onAddPattern: (kind: 'include' | 'exclude') => void
-  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void
-  onClose: () => void
-}
+  rules: RulesDraft;
+  onRulesChange: (rules: RulesDraft) => void;
+  onAddPattern: (kind: 'include' | 'exclude') => void;
+  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void;
+  onClose: () => void;
+};
 
 const formatItems = [
   { value: 'markdown', label: 'Markdown' },
-  { value: 'text', label: 'Text' }
-] as const
+  { value: 'text', label: 'Text' },
+] as const;
 
 const focusableSelector = [
   'button:not([disabled])',
@@ -23,13 +23,15 @@ const focusableSelector = [
   'select:not([disabled])',
   'textarea:not([disabled])',
   'a[href]',
-  '[tabindex]:not([tabindex="-1"])'
-].join(',')
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
-    return !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true'
-  })
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    (element) => {
+      return !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true';
+    },
+  );
 }
 
 function PatternEditor({
@@ -40,18 +42,18 @@ function PatternEditor({
   rules,
   onRulesChange,
   onAddPattern,
-  onRemovePattern
+  onRemovePattern,
 }: {
-  kind: 'include' | 'exclude'
-  label: string
-  input: string
-  patterns: string[]
-  rules: RulesDraft
-  onRulesChange: (rules: RulesDraft) => void
-  onAddPattern: (kind: 'include' | 'exclude') => void
-  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void
+  kind: 'include' | 'exclude';
+  label: string;
+  input: string;
+  patterns: string[];
+  rules: RulesDraft;
+  onRulesChange: (rules: RulesDraft) => void;
+  onAddPattern: (kind: 'include' | 'exclude') => void;
+  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void;
 }): ReactElement {
-  const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
+  const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
 
   return (
     <div>
@@ -65,8 +67,8 @@ function PatternEditor({
           onChange={(event) => onRulesChange({ ...rules, [inputKey]: event.target.value })}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
-              event.preventDefault()
-              onAddPattern(kind)
+              event.preventDefault();
+              onAddPattern(kind);
             }
           }}
           placeholder={kind === 'include' ? 'src/**/*.ts' : 'dist/**'}
@@ -97,7 +99,7 @@ function PatternEditor({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function RulesSheet({
@@ -105,65 +107,68 @@ export function RulesSheet({
   onRulesChange,
   onAddPattern,
   onRemovePattern,
-  onClose
+  onClose,
 }: RulesSheetProps): ReactElement {
-  const dialogRef = useRef<HTMLElement>(null)
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const dialog = dialogRef.current
+    const dialog = dialogRef.current;
 
     if (!dialog) {
-      return
+      return;
     }
 
-    const focusableElements = getFocusableElements(dialog)
-    ;(focusableElements[0] ?? dialog).focus()
+    const focusableElements = getFocusableElements(dialog);
+    (focusableElements[0] ?? dialog).focus();
 
     function handleKeyDown(event: KeyboardEvent): void {
-      const currentDialog = dialogRef.current
+      const currentDialog = dialogRef.current;
 
       if (!currentDialog) {
-        return
+        return;
       }
 
       if (event.key === 'Escape') {
-        event.preventDefault()
-        onClose()
-        return
+        event.preventDefault();
+        onClose();
+        return;
       }
 
       if (event.key !== 'Tab') {
-        return
+        return;
       }
 
-      const currentFocusableElements = getFocusableElements(currentDialog)
+      const currentFocusableElements = getFocusableElements(currentDialog);
 
       if (currentFocusableElements.length === 0) {
-        event.preventDefault()
-        currentDialog.focus()
-        return
+        event.preventDefault();
+        currentDialog.focus();
+        return;
       }
 
-      const firstElement = currentFocusableElements[0]
-      const lastElement = currentFocusableElements[currentFocusableElements.length - 1]
-      const activeElement = document.activeElement
+      const firstElement = currentFocusableElements[0];
+      const lastElement = currentFocusableElements[currentFocusableElements.length - 1];
+      const activeElement = document.activeElement;
 
-      if (event.shiftKey && (activeElement === firstElement || !currentDialog.contains(activeElement))) {
-        event.preventDefault()
-        lastElement.focus()
-        return
+      if (
+        event.shiftKey &&
+        (activeElement === firstElement || !currentDialog.contains(activeElement))
+      ) {
+        event.preventDefault();
+        lastElement.focus();
+        return;
       }
 
       if (!event.shiftKey && activeElement === lastElement) {
-        event.preventDefault()
-        firstElement.focus()
+        event.preventDefault();
+        firstElement.focus();
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keydown', handleKeyDown);
 
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   return (
     <div className="absolute inset-0 z-20 flex justify-end bg-black/20">
@@ -239,5 +244,5 @@ export function RulesSheet({
         </div>
       </aside>
     </div>
-  )
+  );
 }

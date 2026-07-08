@@ -1,50 +1,45 @@
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
-import { PlayIcon, SearchIcon, ShieldIcon } from '../../../shared/icons/Icons'
-import { Button } from '../../../shared/ui/Button'
+import { CheckIcon, ShieldIcon } from '../../../shared/icons/Icons';
+import { cn } from '../../../shared/lib/cn';
+import type { WorkflowStep } from '../model/view-model';
 
-export type AppChromeProps = {
-  isGenerating: boolean
-  canGenerate: boolean
-  onGenerate: () => void
-}
-
-export function AppChrome({ isGenerating, canGenerate, onGenerate }: AppChromeProps): ReactElement {
+export function AppChrome({ steps }: { steps: WorkflowStep[] }): ReactElement {
   return (
-    <header className="native-toolbar grid h-[52px] grid-cols-[260px_1fr_340px] border-b border-line">
-      <div className="flex items-center gap-3 px-4" data-electron-drag-region>
-        <div className="flex items-center gap-2" data-electron-drag-region>
-          <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-          <span className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
-          <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-        </div>
-      </div>
-      <div className="flex min-w-0 items-center justify-center gap-3 px-4" data-electron-drag-region>
-        <div className="min-w-0 text-center leading-none" data-electron-drag-region>
-          <div className="truncate text-[13px] font-semibold text-ink/92">Git-Ingest</div>
-          <div className="mt-1 truncate text-[11px] text-muted">Project -&gt; Filter -&gt; Generate -&gt; Export</div>
-        </div>
-      </div>
-      <div className="flex items-center justify-end gap-2 px-3">
-        <div className="hidden h-8 items-center gap-2 rounded-[9px] border border-line bg-black/[0.035] px-2.5 text-xs text-muted xl:flex">
-          <SearchIcon className="h-3.5 w-3.5" />
-          <span className="whitespace-nowrap">Command</span>
-          <kbd className="min-w-10 whitespace-nowrap rounded bg-black/[0.055] px-1.5 py-0.5 text-center text-[10px] text-ink/72">Cmd K</kbd>
-        </div>
-        <div className="hidden h-8 items-center gap-1.5 rounded-[9px] border border-success/20 bg-success-soft px-2.5 text-xs font-medium text-success-strong lg:flex">
-          <ShieldIcon className="h-3.5 w-3.5" />
-          Local
-        </div>
-        <Button
-          disabled={!canGenerate || isGenerating}
-          leftIcon={<PlayIcon className="h-3.5 w-3.5" />}
-          onClick={onGenerate}
-          size="sm"
-          variant="primary"
+    <header className="native-toolbar grid h-[52px] grid-cols-[240px_1fr_320px] border-b border-line">
+      <div data-electron-drag-region />
+      <div className="flex min-w-0 items-center justify-center px-4" data-electron-drag-region>
+        <div
+          aria-label="Workflow progress"
+          className="flex min-w-0 items-center gap-1.5"
+          data-electron-drag-region
         >
-          {isGenerating ? 'Running' : 'Generate'}
-        </Button>
+          {steps.map((step, index) => (
+            <div key={step.label} className="flex min-w-0 items-center gap-1.5">
+              <span
+                className={cn(
+                  'inline-flex h-6 items-center gap-1 rounded-[7px] px-2 text-[12px] font-medium',
+                  step.status === 'current' && 'bg-black/[0.075] text-ink',
+                  step.status === 'complete' && 'bg-black/[0.045] text-ink/78',
+                  step.status === 'pending' && 'text-muted',
+                )}
+              >
+                {step.status === 'complete' ? <CheckIcon className="h-3 w-3" /> : null}
+                {step.label}
+              </span>
+              {index < steps.length - 1 ? (
+                <span className="text-[11px] text-muted/70">/</span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 px-3" data-electron-drag-region>
+        <div className="hidden h-8 items-center gap-1.5 rounded-[8px] border border-success/24 bg-success-soft px-2.5 text-xs font-medium text-success-strong lg:flex">
+          <ShieldIcon className="h-3.5 w-3.5" />
+          Local only
+        </div>
       </div>
     </header>
-  )
+  );
 }

@@ -1,14 +1,25 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 
-import { resolveDropSelection } from './drop'
-import type { DesktopError, GenerateResult, GenerationFinishedMessage, GenerationProgressMessage, PreviewResult } from './env'
-import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types'
-import { bytesToMegabytes, makeRequestKey, megabytesToBytes } from './features/ingest/model/view-model'
-import { AppChrome } from './features/ingest/ui/AppChrome'
-import { Inspector } from './features/ingest/ui/Inspector'
-import { Sidebar } from './features/ingest/ui/Sidebar'
-import { StatusBar } from './features/ingest/ui/StatusBar'
-import { Workspace } from './features/ingest/ui/Workspace'
+import { resolveDropSelection } from './drop';
+import type {
+  DesktopError,
+  GenerateResult,
+  GenerationFinishedMessage,
+  GenerationProgressMessage,
+  PreviewResult,
+} from './env';
+import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types';
+import {
+  bytesToMegabytes,
+  getWorkflowSteps,
+  makeRequestKey,
+  megabytesToBytes,
+} from './features/ingest/model/view-model';
+import { AppChrome } from './features/ingest/ui/AppChrome';
+import { Inspector } from './features/ingest/ui/Inspector';
+import { Sidebar } from './features/ingest/ui/Sidebar';
+import { StatusBar } from './features/ingest/ui/StatusBar';
+import { Workspace } from './features/ingest/ui/Workspace';
 
 const initialRules: RulesDraft = {
   format: 'markdown',
@@ -16,13 +27,13 @@ const initialRules: RulesDraft = {
   includeInput: '',
   excludeInput: '',
   includePatterns: [],
-  excludePatterns: []
-}
+  excludePatterns: [],
+};
 
 function createRunRecord(
   requestId: string,
   source: GenerateResult | PreviewResult,
-  status: RunRecord['status']
+  status: RunRecord['status'],
 ): RunRecord {
   return {
     id: requestId,
@@ -30,438 +41,488 @@ function createRunRecord(
     createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     tokenCount: 'tokenEstimate' in source ? source.tokenEstimate : source.estimatedTokenCount,
     outputBytes: 'outputBytes' in source ? source.outputBytes : source.estimatedOutputBytes,
-    status
-  }
+    status,
+  };
 }
 
 export function App() {
-  const [selectedView, setSelectedView] = useState<AppView>('projects')
-  const [folderPath, setFolderPath] = useState('')
-  const [rules, setRules] = useState<RulesDraft>(initialRules)
-  const [rulesOpen, setRulesOpen] = useState(false)
-  const [runs, setRuns] = useState<RunRecord[]>([])
-  const [preview, setPreview] = useState<PreviewResult | null>(null)
-  const [generated, setGenerated] = useState<GenerateResult | null>(null)
-  const [recentProjects, setRecentProjects] = useState<Array<{ path: string; name: string; lastOpenedAt: string }>>([])
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState<DesktopError | null>(null)
-  const [phase, setPhase] = useState('')
-  const [progressCounts, setProgressCounts] = useState<{ processed?: number; total?: number }>({})
-  const [busy, setBusy] = useState(false)
-  const [hydrated, setHydrated] = useState(false)
-  const [lastPreviewKey, setLastPreviewKey] = useState<string | null>(null)
-  const [previewRefreshToken, setPreviewRefreshToken] = useState(0)
-  const [activeRequestId, setActiveRequestId] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [savedFilePath, setSavedFilePath] = useState<string | null>(null)
+  const [selectedView, setSelectedView] = useState<AppView>('projects');
+  const [folderPath, setFolderPath] = useState('');
+  const [rules, setRules] = useState<RulesDraft>(initialRules);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [generated, setGenerated] = useState<GenerateResult | null>(null);
+  const [recentProjects, setRecentProjects] = useState<
+    Array<{ path: string; name: string; lastOpenedAt: string }>
+  >([]);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState<DesktopError | null>(null);
+  const [phase, setPhase] = useState('');
+  const [progressCounts, setProgressCounts] = useState<{ processed?: number; total?: number }>({});
+  const [busy, setBusy] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [lastPreviewKey, setLastPreviewKey] = useState<string | null>(null);
+  const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  const activeRequestIdRef = useRef<string | null>(null)
-  const activeGenerationKeyRef = useRef<string | null>(null)
-  const folderPathRef = useRef('')
-  const previewRef = useRef<PreviewResult | null>(null)
-  const previewRequestRef = useRef(0)
-  const requestKeyRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    activeRequestIdRef.current = activeRequestId
-  }, [activeRequestId])
+  const activeRequestIdRef = useRef<string | null>(null);
+  const activeGenerationKeyRef = useRef<string | null>(null);
+  const folderPathRef = useRef('');
+  const previewRef = useRef<PreviewResult | null>(null);
+  const previewRequestRef = useRef(0);
+  const requestKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    folderPathRef.current = folderPath
-  }, [folderPath])
+    activeRequestIdRef.current = activeRequestId;
+  }, [activeRequestId]);
 
   useEffect(() => {
-    previewRef.current = preview
-  }, [preview])
+    folderPathRef.current = folderPath;
+  }, [folderPath]);
+
+  useEffect(() => {
+    previewRef.current = preview;
+  }, [preview]);
 
   useEffect(() => {
     void window.gitIngest.getState().then((state) => {
-      setRecentProjects(state.recentProjects)
-      setFolderPath(state.lastFolderPath ?? '')
+      setRecentProjects(state.recentProjects);
+      setFolderPath(state.lastFolderPath ?? '');
       setRules({
         format: state.settings.format,
         maxFileSizeMb: String(bytesToMegabytes(state.settings.maxFileSizeBytes)),
         includeInput: '',
         excludeInput: '',
         includePatterns: state.settings.includePatterns,
-        excludePatterns: state.settings.excludePatterns
-      })
-      setRulesOpen(false)
-      setHydrated(true)
-    })
+        excludePatterns: state.settings.excludePatterns,
+      });
+      setRulesOpen(false);
+      setHydrated(true);
+    });
 
-    const stopProgress = window.gitIngest.onGenerationProgress((message: GenerationProgressMessage) => {
-      if (message.requestId !== activeRequestIdRef.current) {
-        return
-      }
-
-      if (activeGenerationKeyRef.current !== requestKeyRef.current) {
-        return
-      }
-
-      setPhase(message.phase)
-      setProgressCounts({ processed: message.processedFiles, total: message.totalFiles })
-    })
-
-    const stopFinished = window.gitIngest.onGenerationFinished((message: GenerationFinishedMessage) => {
-      if (message.requestId !== activeRequestIdRef.current) {
-        return
-      }
-
-      const finishedGenerationKey = activeGenerationKeyRef.current
-      const currentRequestKey = requestKeyRef.current
-
-      activeRequestIdRef.current = null
-      activeGenerationKeyRef.current = null
-      setBusy(false)
-      setActiveRequestId(null)
-
-      if (finishedGenerationKey !== currentRequestKey) {
-        setPhase('')
-        setProgressCounts({})
-        setMessage('Generation output ignored because the project or rules changed.')
-        setError(null)
-        setGenerated(null)
-        setSavedFilePath(null)
-        setPreviewRefreshToken((current) => current + 1)
-        return
-      }
-
-      if (message.status === 'success') {
-        setPhase('done')
-        setPreview(message.result)
-        setGenerated(message.result)
-        setSavedFilePath(null)
-        setError(null)
-        setRuns((current) => [createRunRecord(message.requestId, message.result, 'success'), ...current])
-        setRecentProjects((current) => {
-          const next = [
-            { path: message.result.rootDir, name: message.result.projectName, lastOpenedAt: new Date().toISOString() },
-            ...current.filter((entry) => entry.path !== message.result.rootDir)
-          ]
-          return next.slice(0, 8)
-        })
-        return
-      }
-
-      setPhase('')
-      setError(message.error)
-      setMessage(message.status === 'cancelled' ? 'Generation cancelled.' : '')
-      setRuns((current) => {
-        const currentFolderPath = folderPathRef.current
-        const currentPreview = previewRef.current
-
-        if (!currentFolderPath || !currentPreview) {
-          return current
+    const stopProgress = window.gitIngest.onGenerationProgress(
+      (message: GenerationProgressMessage) => {
+        if (message.requestId !== activeRequestIdRef.current) {
+          return;
         }
 
-        return [createRunRecord(message.requestId, currentPreview, message.status), ...current]
-      })
-    })
+        if (activeGenerationKeyRef.current !== requestKeyRef.current) {
+          return;
+        }
+
+        setPhase(message.phase);
+        setProgressCounts({ processed: message.processedFiles, total: message.totalFiles });
+      },
+    );
+
+    const stopFinished = window.gitIngest.onGenerationFinished(
+      (message: GenerationFinishedMessage) => {
+        if (message.requestId !== activeRequestIdRef.current) {
+          return;
+        }
+
+        const finishedGenerationKey = activeGenerationKeyRef.current;
+        const currentRequestKey = requestKeyRef.current;
+
+        activeRequestIdRef.current = null;
+        activeGenerationKeyRef.current = null;
+        setBusy(false);
+        setActiveRequestId(null);
+
+        if (finishedGenerationKey !== currentRequestKey) {
+          setPhase('');
+          setProgressCounts({});
+          setMessage('Generation output ignored because the project or rules changed.');
+          setError(null);
+          setGenerated(null);
+          setSavedFilePath(null);
+          setPreviewRefreshToken((current) => current + 1);
+          return;
+        }
+
+        if (message.status === 'success') {
+          setPhase('done');
+          setPreview(message.result);
+          setGenerated(message.result);
+          setSavedFilePath(null);
+          setError(null);
+          setRuns((current) => [
+            createRunRecord(message.requestId, message.result, 'success'),
+            ...current,
+          ]);
+          setRecentProjects((current) => {
+            const next = [
+              {
+                path: message.result.rootDir,
+                name: message.result.projectName,
+                lastOpenedAt: new Date().toISOString(),
+              },
+              ...current.filter((entry) => entry.path !== message.result.rootDir),
+            ];
+            return next.slice(0, 8);
+          });
+          return;
+        }
+
+        setPhase('');
+        setError(message.error);
+        setMessage(message.status === 'cancelled' ? 'Generation cancelled.' : '');
+        setRuns((current) => {
+          const currentFolderPath = folderPathRef.current;
+          const currentPreview = previewRef.current;
+
+          if (!currentFolderPath || !currentPreview) {
+            return current;
+          }
+
+          return [createRunRecord(message.requestId, currentPreview, message.status), ...current];
+        });
+      },
+    );
 
     return () => {
-      stopProgress()
-      stopFinished()
-    }
-  }, [])
+      stopProgress();
+      stopFinished();
+    };
+  }, []);
 
-  const requestPayload = useMemo(() => ({
-    rootDir: folderPath,
-    format: rules.format,
-    maxFileSizeBytes: megabytesToBytes(rules.maxFileSizeMb),
-    includePatterns: rules.includePatterns,
-    excludePatterns: rules.excludePatterns
-  }), [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb])
+  const requestPayload = useMemo(
+    () => ({
+      rootDir: folderPath,
+      format: rules.format,
+      maxFileSizeBytes: megabytesToBytes(rules.maxFileSizeMb),
+      includePatterns: rules.includePatterns,
+      excludePatterns: rules.excludePatterns,
+    }),
+    [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb],
+  );
 
-  const requestKey = useMemo(() => makeRequestKey(requestPayload), [requestPayload])
-  requestKeyRef.current = requestKey
-  const readyToGenerate = Boolean(preview) && lastPreviewKey === requestKey && !busy
+  const requestKey = useMemo(() => makeRequestKey(requestPayload), [requestPayload]);
+  requestKeyRef.current = requestKey;
+  const readyToGenerate = Boolean(preview) && lastPreviewKey === requestKey && !busy;
+  const workflowSteps = useMemo(
+    () =>
+      getWorkflowSteps({
+        hasProject: Boolean(folderPath),
+        hasPreview: Boolean(preview),
+        canGenerate: readyToGenerate,
+        hasOutput: Boolean(generated?.output),
+      }),
+    [folderPath, generated?.output, preview, readyToGenerate],
+  );
 
   useEffect(() => {
     if (!hydrated) {
-      return
+      return;
     }
 
     if (!folderPath) {
-      setPreview(null)
-      setGenerated(null)
-      setSavedFilePath(null)
-      setLastPreviewKey(null)
-      setPhase('')
-      return
+      setPreview(null);
+      setGenerated(null);
+      setSavedFilePath(null);
+      setLastPreviewKey(null);
+      setPhase('');
+      return;
     }
 
     if (activeRequestIdRef.current || activeGenerationKeyRef.current) {
-      return
+      return;
     }
 
-    const requestNumber = previewRequestRef.current + 1
-    previewRequestRef.current = requestNumber
-    setBusy(true)
-    setPhase('Scanning preview')
-    setProgressCounts({})
-    setError(null)
-    setMessage('')
-    setGenerated(null)
-    setSavedFilePath(null)
+    const requestNumber = previewRequestRef.current + 1;
+    previewRequestRef.current = requestNumber;
+    setBusy(true);
+    setPhase('Scanning preview');
+    setProgressCounts({});
+    setError(null);
+    setMessage('');
+    setGenerated(null);
+    setSavedFilePath(null);
 
     void window.gitIngest.preview(requestPayload).then((result) => {
       if (previewRequestRef.current !== requestNumber) {
-        return
+        return;
       }
 
-      setBusy(false)
-      setPhase('')
+      setBusy(false);
+      setPhase('');
 
       if (!result.ok) {
-        setPreview(null)
-        setLastPreviewKey(null)
-        setError(result.error)
-        return
+        setPreview(null);
+        setLastPreviewKey(null);
+        setError(result.error);
+        return;
       }
 
-      setPreview(result.result)
-      setLastPreviewKey(requestKey)
+      setPreview(result.result);
+      setLastPreviewKey(requestKey);
       setRecentProjects((current) => {
         const next = [
-          { path: result.result.rootDir, name: result.result.projectName, lastOpenedAt: new Date().toISOString() },
-          ...current.filter((entry) => entry.path !== result.result.rootDir)
-        ]
-        return next.slice(0, 8)
-      })
-    })
-  }, [folderPath, hydrated, previewRefreshToken, requestKey, requestPayload])
+          {
+            path: result.result.rootDir,
+            name: result.result.projectName,
+            lastOpenedAt: new Date().toISOString(),
+          },
+          ...current.filter((entry) => entry.path !== result.result.rootDir),
+        ];
+        return next.slice(0, 8);
+      });
+    });
+  }, [folderPath, hydrated, previewRefreshToken, requestKey, requestPayload]);
 
   function resetFeedback() {
-    setMessage('')
-    setError(null)
+    setMessage('');
+    setError(null);
   }
 
   function resetStaleProjectState() {
-    setPreview(null)
-    setGenerated(null)
-    setSavedFilePath(null)
-    setLastPreviewKey(null)
-    setProgressCounts({})
+    setPreview(null);
+    setGenerated(null);
+    setSavedFilePath(null);
+    setLastPreviewKey(null);
+    setProgressCounts({});
   }
 
   function isGenerationActive() {
-    return Boolean(activeRequestIdRef.current || activeGenerationKeyRef.current)
+    return Boolean(activeRequestIdRef.current || activeGenerationKeyRef.current);
   }
 
-  function blockGenerationMutation(message = 'Cancel the current generation before changing projects or rules.') {
-    setMessage(message)
-    setError(null)
+  function blockGenerationMutation(
+    message = 'Cancel the current generation before changing projects or rules.',
+  ) {
+    setMessage(message);
+    setError(null);
   }
 
   async function chooseFolder() {
     if (isGenerationActive()) {
-      blockGenerationMutation()
-      return
+      blockGenerationMutation();
+      return;
     }
 
-    resetFeedback()
-    const result = await window.gitIngest.chooseFolder()
+    resetFeedback();
+    const result = await window.gitIngest.chooseFolder();
 
     if (isGenerationActive()) {
-      blockGenerationMutation()
-      return
+      blockGenerationMutation();
+      return;
     }
 
     if (!result.canceled && result.folderPath) {
-      setFolderPath(result.folderPath)
-      resetStaleProjectState()
-      setSelectedView('projects')
+      setFolderPath(result.folderPath);
+      resetStaleProjectState();
+      setSelectedView('projects');
     }
   }
 
   function addPattern(kind: 'include' | 'exclude') {
     if (isGenerationActive()) {
-      blockGenerationMutation()
-      return
+      blockGenerationMutation();
+      return;
     }
 
-    const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
-    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
-    const value = rules[inputKey].trim()
+    const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
+    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
+    const value = rules[inputKey].trim();
 
     if (!value) {
-      return
+      return;
     }
 
     setRules((current) => ({
       ...current,
       [inputKey]: '',
-      [listKey]: [...current[listKey], value]
-    }))
+      [listKey]: [...current[listKey], value],
+    }));
   }
 
   function removePattern(kind: 'include' | 'exclude', pattern: string) {
     if (isGenerationActive()) {
-      blockGenerationMutation()
-      return
+      blockGenerationMutation();
+      return;
     }
 
-    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
+    const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
     setRules((current) => ({
       ...current,
-      [listKey]: current[listKey].filter((entry) => entry !== pattern)
-    }))
+      [listKey]: current[listKey].filter((entry) => entry !== pattern),
+    }));
   }
 
   function handleRulesChange(nextRules: RulesDraft) {
     if (isGenerationActive()) {
-      blockGenerationMutation()
-      return
+      blockGenerationMutation();
+      return;
     }
 
-    setRules(nextRules)
+    setRules(nextRules);
   }
 
   async function generateOutput() {
     if (!readyToGenerate) {
-      return
+      return;
     }
 
-    resetFeedback()
-    setBusy(true)
-    setPhase('Generating output')
-    setProgressCounts({})
-    const generationKey = requestKey
-    activeGenerationKeyRef.current = generationKey
-    const result = await window.gitIngest.generate(requestPayload)
+    resetFeedback();
+    setBusy(true);
+    setPhase('Generating output');
+    setProgressCounts({});
+    const generationKey = requestKey;
+    activeGenerationKeyRef.current = generationKey;
+    const result = await window.gitIngest.generate(requestPayload);
 
     if (!result.ok) {
       if (activeGenerationKeyRef.current === generationKey) {
-        activeGenerationKeyRef.current = null
+        activeGenerationKeyRef.current = null;
       }
 
-      setBusy(false)
-      setPhase('')
-      setError(result.error)
-      return
+      setBusy(false);
+      setPhase('');
+      setError(result.error);
+      return;
     }
 
-    activeRequestIdRef.current = result.requestId
-    setActiveRequestId(result.requestId)
+    activeRequestIdRef.current = result.requestId;
+    setActiveRequestId(result.requestId);
   }
 
   async function cancelGeneration() {
     if (!activeRequestId) {
-      return
+      return;
     }
 
-    const result = await window.gitIngest.cancelGeneration(activeRequestId)
+    const result = await window.gitIngest.cancelGeneration(activeRequestId);
     if (!result.ok && result.error) {
-      setError(result.error)
+      setError(result.error);
     }
   }
 
   async function copyOutput() {
     if (!generated) {
-      return
+      return;
     }
 
-    const result = await window.gitIngest.copyOutput(generated.output)
+    const result = await window.gitIngest.copyOutput(generated.output);
     if (result.ok) {
-      setMessage('Copied output to clipboard.')
-      setError(null)
-      return
+      setMessage('Copied output to clipboard.');
+      setError(null);
+      return;
     }
 
     if (result.error) {
-      setError(result.error)
+      setError(result.error);
     }
   }
 
   async function saveOutput() {
     if (!generated) {
-      return
+      return;
     }
 
     const result = await window.gitIngest.saveOutput({
       output: generated.output,
       projectName: generated.projectName,
-      format: generated.format
-    })
+      format: generated.format,
+    });
 
     if (result.ok && result.filePath) {
-      setSavedFilePath(result.filePath)
-      setMessage(`Saved output to ${result.filePath}`)
-      setError(null)
-      return
+      setSavedFilePath(result.filePath);
+      setMessage(`Saved output to ${result.filePath}`);
+      setError(null);
+      return;
     }
 
     if (result.error) {
-      setError(result.error)
+      setError(result.error);
     }
   }
 
   async function openSavedFile() {
     if (!savedFilePath) {
-      return
+      return;
     }
 
-    const result = await window.gitIngest.openOutputFile(savedFilePath)
+    const result = await window.gitIngest.openOutputFile(savedFilePath);
     if (!result.ok && result.error) {
-      setError(result.error)
+      setError(result.error);
     }
   }
 
   async function revealSavedFile() {
     if (!savedFilePath) {
-      return
+      return;
     }
 
-    const result = await window.gitIngest.revealOutputFile(savedFilePath)
+    const result = await window.gitIngest.revealOutputFile(savedFilePath);
     if (!result.ok && result.error) {
-      setError(result.error)
+      setError(result.error);
     }
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault()
-    setIsDragging(false)
+    event.preventDefault();
+    setIsDragging(false);
 
     if (isGenerationActive()) {
-      blockGenerationMutation('Cancel the current generation before dropping another project.')
-      return
+      blockGenerationMutation('Cancel the current generation before dropping another project.');
+      return;
     }
 
-    resetFeedback()
+    resetFeedback();
     const selection = resolveDropSelection({
       files: Array.from(event.dataTransfer.files).map((file) => file as File & { path?: string }),
-      items: Array.from(event.dataTransfer.items)
-    })
+      items: Array.from(event.dataTransfer.items),
+    });
 
     if (selection.kind === 'error') {
-      setError({ code: selection.code, userMessage: selection.message, detail: null })
-      return
+      setError({ code: selection.code, userMessage: selection.message, detail: null });
+      return;
     }
 
-    setFolderPath(selection.path)
-    resetStaleProjectState()
-    setSelectedView('projects')
+    setFolderPath(selection.path);
+    resetStaleProjectState();
+    setSelectedView('projects');
   }
 
   function selectRecentProject(path: string) {
     if (isGenerationActive()) {
-      blockGenerationMutation('Cancel the current generation before opening another project.')
-      return
+      blockGenerationMutation('Cancel the current generation before opening another project.');
+      return;
     }
 
-    setFolderPath(path)
-    resetFeedback()
-    resetStaleProjectState()
-    setSelectedView('projects')
+    setFolderPath(path);
+    resetFeedback();
+    resetStaleProjectState();
+    setSelectedView('projects');
+  }
+
+  async function removeRecentProject(path: string) {
+    resetFeedback();
+    const result = await window.gitIngest.removeRecentProject(path);
+
+    if (result.ok) {
+      setRecentProjects(result.recentProjects);
+      if (folderPathRef.current === path) {
+        setFolderPath('');
+        resetStaleProjectState();
+        setSelectedView('projects');
+      }
+      return;
+    }
+
+    setError(result.error);
   }
 
   return (
-    <div className="h-dvh overflow-hidden p-0 text-ink selection:bg-accent/30 lg:p-5">
-      <div className="relative mx-auto grid h-full max-w-[1680px] grid-rows-[52px_1fr_26px] overflow-hidden border-line-strong bg-window shadow-window ring-1 ring-line lg:rounded-[18px] lg:border">
-        <AppChrome canGenerate={readyToGenerate} isGenerating={busy} onGenerate={() => void generateOutput()} />
-        <div className="grid min-h-0 grid-cols-[260px_minmax(0,1fr)_340px]">
+    <div className="h-dvh overflow-hidden bg-window text-ink selection:bg-accent/30">
+      <div className="relative grid h-full grid-rows-[52px_1fr_26px] overflow-hidden bg-window">
+        <AppChrome steps={workflowSteps} />
+        <div className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)_320px]">
           <Sidebar
+            onRemoveRecentProject={removeRecentProject}
             onSelectRecentProject={selectRecentProject}
             onViewChange={setSelectedView}
             recentProjects={recentProjects}
@@ -477,21 +538,30 @@ export function App() {
             onChooseFolder={() => void chooseFolder()}
             onCloseRules={() => setRulesOpen(false)}
             onDragEnter={(event) => {
-              event.preventDefault()
-              setIsDragging(true)
+              event.preventDefault();
+              setIsDragging(true);
             }}
             onDragLeave={(event) => {
-              event.preventDefault()
+              event.preventDefault();
               if (event.currentTarget === event.target) {
-                setIsDragging(false)
+                setIsDragging(false);
               }
             }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleDrop}
             onGenerate={() => void generateOutput()}
+            onClearOutput={() => {
+              setGenerated(null);
+              setSavedFilePath(null);
+              setMessage('');
+            }}
+            onCopy={() => void copyOutput()}
             onOpenRules={() => setRulesOpen(true)}
+            onOpenSavedFile={() => void openSavedFile()}
+            onRevealSavedFile={() => void revealSavedFile()}
             onRemovePattern={removePattern}
             onRulesChange={handleRulesChange}
+            onSave={() => void saveOutput()}
             phase={phase}
             preview={preview}
             progressCounts={progressCounts}
@@ -499,27 +569,13 @@ export function App() {
             rules={rules}
             rulesOpen={rulesOpen}
             runs={runs}
+            savedFilePath={savedFilePath}
             selectedView={selectedView}
           />
-          <Inspector
-            error={error}
-            generated={generated}
-            message={message}
-            onClearOutput={() => {
-              setGenerated(null)
-              setSavedFilePath(null)
-              setMessage('')
-            }}
-            onCopy={() => void copyOutput()}
-            onOpenSavedFile={() => void openSavedFile()}
-            onRevealSavedFile={() => void revealSavedFile()}
-            onSave={() => void saveOutput()}
-            preview={preview}
-            savedFilePath={savedFilePath}
-          />
+          <Inspector error={error} generated={generated} message={message} preview={preview} />
         </div>
         <StatusBar folderPath={folderPath} generated={generated} phase={phase} preview={preview} />
       </div>
     </div>
-  )
+  );
 }

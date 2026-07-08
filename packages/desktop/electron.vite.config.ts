@@ -1,28 +1,28 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { defineConfig } from 'electron-vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'electron-vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const coreEntry = path.resolve(currentDir, '../core/src/index.ts')
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const coreEntry = path.resolve(currentDir, '../core/src/index.ts');
 
 export default defineConfig({
   main: {
     resolve: {
       alias: {
-        '@git-ingest/core': coreEntry
-      }
+        '@git-ingest/core': coreEntry,
+      },
     },
     build: {
       externalizeDeps: {
-        exclude: ['@git-ingest/core']
-      }
-    }
+        exclude: ['@git-ingest/core'],
+      },
+    },
   },
   preload: {},
   renderer: {
-    plugins: [react(), tailwindcss()]
-  }
-})
+    plugins: [react(), tailwindcss()],
+  },
+});

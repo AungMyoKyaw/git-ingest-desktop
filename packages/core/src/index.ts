@@ -1,5 +1,5 @@
-export { AppError, GitIngestError, toGitIngestError } from './errors.js'
-export { generateProject, generateProjectOutput, previewProject } from './scan-project.js'
+export { AppError, GitIngestError, toGitIngestError } from './errors.js';
+export { generateProject, generateProjectOutput, previewProject } from './scan-project.js';
 export type {
   FileTypeSummary,
   GenerateProjectResult,
@@ -10,5 +10,5 @@ export type {
   ProgressPhase,
   ProjectSummary,
   ScanProjectOptions,
-  SkippedFile
-} from './types.js'
+  SkippedFile,
+} from './types.js';

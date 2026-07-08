@@ -1,19 +1,19 @@
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
-import { cn } from '../lib/cn'
+import { cn } from '../lib/cn';
 
 export type SegmentedControlProps<T extends string> = {
-  ariaLabel: string
-  items: ReadonlyArray<{ value: T; label: string }>
-  selected: T
-  onChange: (value: T) => void
-}
+  ariaLabel: string;
+  items: ReadonlyArray<{ value: T; label: string }>;
+  selected: T;
+  onChange: (value: T) => void;
+};
 
 export function SegmentedControl<T extends string>({
   ariaLabel,
   items,
   selected,
-  onChange
+  onChange,
 }: SegmentedControlProps<T>): ReactElement {
   return (
     <div
@@ -29,7 +29,7 @@ export function SegmentedControl<T extends string>({
             'h-6 rounded-[7px] px-3 text-[12px] font-medium transition',
             item.value === selected
               ? 'bg-white text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink',
           )}
           onClick={() => onChange(item.value)}
           type="button"
@@ -38,5 +38,5 @@ export function SegmentedControl<T extends string>({
         </button>
       ))}
     </div>
-  )
+  );
 }

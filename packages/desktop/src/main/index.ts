@@ -1,20 +1,22 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron';
 
-import { registerIpcHandlers } from './ipc.js'
-import { createBrowserWindowWebPreferences } from './paths.js'
+import { registerIpcHandlers } from './ipc.js';
+import { createBrowserWindowWebPreferences } from './paths.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const appIconPath = path.join(currentDir, '../../build/icons/icon.png')
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const appIconPath = path.join(currentDir, '../../build/icons/icon.png');
 
 function isTrustedAppUrl(url: string) {
   if (url.startsWith('file://')) {
-    return true
+    return true;
   }
 
-  return Boolean(process.env.ELECTRON_RENDERER_URL && url.startsWith(process.env.ELECTRON_RENDERER_URL))
+  return Boolean(
+    process.env.ELECTRON_RENDERER_URL && url.startsWith(process.env.ELECTRON_RENDERER_URL),
+  );
 }
 
 function createMainWindow() {
@@ -25,50 +27,50 @@ function createMainWindow() {
     minWidth: 960,
     minHeight: 680,
     show: false,
-    backgroundColor: '#09111f',
+    backgroundColor: '#fbfcfe',
     icon: appIconPath,
-    webPreferences: createBrowserWindowWebPreferences(currentDir)
-  })
+    webPreferences: createBrowserWindowWebPreferences(currentDir),
+  });
 
   window.webContents.on('will-navigate', (event, url) => {
     if (!isTrustedAppUrl(url)) {
-      event.preventDefault()
+      event.preventDefault();
     }
-  })
+  });
 
-  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
   window.once('ready-to-show', () => {
-    window.show()
-  })
+    window.show();
+  });
 
   if (process.env.ELECTRON_RENDERER_URL) {
-    void window.loadURL(process.env.ELECTRON_RENDERER_URL)
+    void window.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    void window.loadFile(path.join(currentDir, '../renderer/index.html'))
+    void window.loadFile(path.join(currentDir, '../renderer/index.html'));
   }
 
-  return window
+  return window;
 }
 
 app.whenReady().then(() => {
-  const window = createMainWindow()
+  const window = createMainWindow();
 
   registerIpcHandlers({
     window,
     userDataPath: app.getPath('userData'),
-    isTrustedSender: isTrustedAppUrl
-  })
+    isTrustedSender: isTrustedAppUrl,
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow()
+      createMainWindow();
     }
-  })
-})
+  });
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});

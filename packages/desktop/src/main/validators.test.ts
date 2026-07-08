@@ -1,56 +1,56 @@
-import { describe, expect, it } from "vitest";
-import { validateSafeExternalUrl, validateScanPayload } from "./validators";
+import { describe, expect, it } from 'vitest';
+import { validateSafeExternalUrl, validateScanPayload } from './validators';
 
-describe("validateScanPayload", () => {
-  it("rejects invalid folder payloads", () => {
+describe('validateScanPayload', () => {
+  it('rejects invalid folder payloads', () => {
     expect(() =>
       validateScanPayload({
         rootPath: 123,
-        format: "markdown",
+        format: 'markdown',
         maxFileSizeBytes: 100,
         includePatterns: [],
-        excludePatterns: []
-      })
+        excludePatterns: [],
+      }),
     ).toThrow();
   });
 
-  it("rejects invalid format", () => {
+  it('rejects invalid format', () => {
     expect(() =>
       validateScanPayload({
-        rootPath: "/tmp/project",
-        format: "pdf",
+        rootPath: '/tmp/project',
+        format: 'pdf',
         maxFileSizeBytes: 100,
         includePatterns: [],
-        excludePatterns: []
-      })
+        excludePatterns: [],
+      }),
     ).toThrow();
   });
 
-  it("accepts valid payload", () => {
+  it('accepts valid payload', () => {
     expect(
       validateScanPayload({
-        rootPath: "/tmp/project",
-        format: "markdown",
+        rootPath: '/tmp/project',
+        format: 'markdown',
         maxFileSizeBytes: 100,
-        includePatterns: ["*.ts"],
-        excludePatterns: ["dist/**"]
-      })
+        includePatterns: ['*.ts'],
+        excludePatterns: ['dist/**'],
+      }),
     ).toEqual({
-      rootPath: "/tmp/project",
-      format: "markdown",
+      rootPath: '/tmp/project',
+      format: 'markdown',
       maxFileSizeBytes: 100,
-      includePatterns: ["*.ts"],
-      excludePatterns: ["dist/**"]
+      includePatterns: ['*.ts'],
+      excludePatterns: ['dist/**'],
     });
   });
 });
 
-describe("validateSafeExternalUrl", () => {
-  it("allows https links", () => {
-    expect(validateSafeExternalUrl("https://github.com")).toBe("https://github.com/");
+describe('validateSafeExternalUrl', () => {
+  it('allows https links', () => {
+    expect(validateSafeExternalUrl('https://github.com')).toBe('https://github.com/');
   });
 
-  it("rejects insecure links", () => {
-    expect(() => validateSafeExternalUrl("http://example.com")).toThrow();
+  it('rejects insecure links', () => {
+    expect(() => validateSafeExternalUrl('http://example.com')).toThrow();
   });
 });

@@ -20,9 +20,12 @@
     "package:desktop": "bun run --filter @git-ingest/desktop package",
     "ci:test": "bun run test && bun run test:smoke && bun run build",
     "ci:package:desktop": "bun run package:desktop",
-    "build:cli": "bun run --filter @git-ingest/cli build"
+    "build:cli": "bun run --filter @git-ingest/cli build",
+    "format": "prettier --write --ignore-unknown '**/*.{ts,tsx,js,jsx,json,css,md}'",
+    "postinstall": "node packages/desktop/node_modules/electron/install.js 2>/dev/null || true"
   },
   "devDependencies": {
+    "prettier": "^3.5.3",
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

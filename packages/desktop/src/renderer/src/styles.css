@@ -1,20 +1,20 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  --font-mono:
-    "SF Mono", ui-monospace, "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI',
+    sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, 'Cascadia Code', 'Roboto Mono', Menlo, Consolas, monospace;
 
-  --color-app: #eef2f7;
-  --color-canvas: #f7f9fc;
+  --color-app: #eef2f6;
+  --color-canvas: #f8fafc;
   --color-window: #fbfcfe;
   --color-toolbar: #f3f5f8;
   --color-sidebar: #eef3f8;
   --color-line: #dfe5ee;
   --color-line-strong: #c8d1dd;
   --color-ink: #18202b;
-  --color-muted: #687386;
+  --color-muted: #526173;
   --color-accent: #0a84ff;
   --color-accent-strong: #0067d4;
   --color-accent-soft: #e7f2ff;
@@ -28,7 +28,7 @@
   --color-danger-strong: #b42318;
   --color-danger-soft: #fff0ef;
 
-  --shadow-panel: 0 1px 2px rgb(16 24 40 / 0.06), 0 10px 30px rgb(16 24 40 / 0.05);
+  --shadow-panel: 0 1px 2px rgb(16 24 40 / 0.06), 0 6px 18px rgb(16 24 40 / 0.04);
   --shadow-window: 0 24px 80px rgb(30 41 59 / 0.18), 0 2px 8px rgb(30 41 59 / 0.08);
 }
 
@@ -57,10 +57,7 @@
   body {
     margin: 0;
     overflow: hidden;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.72) 0%, rgb(238 242 247 / 0) 46%),
-      radial-gradient(circle at 50% -160px, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0) 42%),
-      var(--color-app);
+    background: var(--color-app);
   }
 
   button,
@@ -71,7 +68,7 @@
   }
 
   button,
-  [role="button"] {
+  [role='button'] {
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -135,15 +132,13 @@
 
   .native-sidebar {
     background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(238 243 248 / 0.82)),
-      var(--color-sidebar);
+      linear-gradient(180deg, rgb(255 255 255 / 0.56), rgb(238 243 248 / 0.9)), var(--color-sidebar);
     backdrop-filter: saturate(1.18) blur(20px);
   }
 
   .native-inspector {
     background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.7), rgb(247 249 252 / 0.86)),
-      var(--color-window);
+      linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(247 249 252 / 0.92)), var(--color-window);
     backdrop-filter: saturate(1.12) blur(20px);
   }
 
@@ -158,7 +153,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    content: "";
+    content: '';
     background: linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0));
   }
 

@@ -1,84 +1,119 @@
-import type { DragEventHandler, ReactElement } from 'react'
+import type { DragEventHandler, ReactElement } from 'react';
 
-import type { GenerateResult, PreviewResult } from '../../../env'
-import { CheckIcon, ClockIcon, FileIcon, FolderIcon, PlayIcon, SettingsIcon, TableIcon } from '../../../shared/icons/Icons'
-import { cn } from '../../../shared/lib/cn'
-import { Button } from '../../../shared/ui/Button'
-import { MetricCard } from '../../../shared/ui/MetricCard'
-import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
-import type { AppView, RulesDraft, RunRecord } from '../model/types'
-import { formatBytes, toPreviewMetrics } from '../model/view-model'
-import { RulesSheet } from './RulesSheet'
+import type { GenerateResult, PreviewResult } from '../../../env';
+import {
+  ClockIcon,
+  CopyIcon,
+  ExternalIcon,
+  FileIcon,
+  FolderIcon,
+  PlayIcon,
+  SettingsIcon,
+  TableIcon,
+} from '../../../shared/icons/Icons';
+import { cn } from '../../../shared/lib/cn';
+import { Button } from '../../../shared/ui/Button';
+import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
+import type { AppView, RulesDraft, RunRecord } from '../model/types';
+import { formatBytes, toPreviewMetrics } from '../model/view-model';
+import { RulesSheet } from './RulesSheet';
 
 export type WorkspaceProps = {
-  selectedView: AppView
-  folderPath: string
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  runs: RunRecord[]
-  rules: RulesDraft
-  busy: boolean
-  readyToGenerate: boolean
-  phase: string
-  progressCounts: { processed?: number; total?: number }
-  isDragging: boolean
-  rulesOpen: boolean
-  onChooseFolder: () => void
-  onGenerate: () => void
-  onCancel: () => void
-  onOpenRules: () => void
-  onCloseRules: () => void
-  onRulesChange: (rules: RulesDraft) => void
-  onAddPattern: (kind: 'include' | 'exclude') => void
-  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void
-  onDragEnter: DragEventHandler<HTMLDivElement>
-  onDragLeave: DragEventHandler<HTMLDivElement>
-  onDragOver: DragEventHandler<HTMLDivElement>
-  onDrop: DragEventHandler<HTMLDivElement>
-}
+  selectedView: AppView;
+  folderPath: string;
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  runs: RunRecord[];
+  rules: RulesDraft;
+  busy: boolean;
+  readyToGenerate: boolean;
+  phase: string;
+  progressCounts: { processed?: number; total?: number };
+  isDragging: boolean;
+  rulesOpen: boolean;
+  savedFilePath: string | null;
+  onChooseFolder: () => void;
+  onGenerate: () => void;
+  onCancel: () => void;
+  onCopy: () => void;
+  onSave: () => void;
+  onOpenSavedFile: () => void;
+  onRevealSavedFile: () => void;
+  onClearOutput: () => void;
+  onOpenRules: () => void;
+  onCloseRules: () => void;
+  onRulesChange: (rules: RulesDraft) => void;
+  onAddPattern: (kind: 'include' | 'exclude') => void;
+  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void;
+  onDragEnter: DragEventHandler<HTMLDivElement>;
+  onDragLeave: DragEventHandler<HTMLDivElement>;
+  onDragOver: DragEventHandler<HTMLDivElement>;
+  onDrop: DragEventHandler<HTMLDivElement>;
+};
 
 const formatItems = [
   { value: 'markdown', label: 'Markdown' },
-  { value: 'text', label: 'Text' }
-] as const
+  { value: 'text', label: 'Text' },
+] as const;
+
+function folderNameFromPath(folderPath: string) {
+  return folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'Project';
+}
 
 function ProjectHeader({
   folderPath,
   preview,
+  rules,
   busy,
   readyToGenerate,
   onChooseFolder,
   onGenerate,
   onCancel,
-  onOpenRules
+  onOpenRules,
 }: {
-  folderPath: string
-  preview: PreviewResult | null
-  busy: boolean
-  readyToGenerate: boolean
-  onChooseFolder: () => void
-  onGenerate: () => void
-  onCancel: () => void
-  onOpenRules: () => void
+  folderPath: string;
+  preview: PreviewResult | null;
+  rules: RulesDraft;
+  busy: boolean;
+  readyToGenerate: boolean;
+  onChooseFolder: () => void;
+  onGenerate: () => void;
+  onCancel: () => void;
+  onOpenRules: () => void;
 }): ReactElement {
+  const projectName = preview?.projectName || folderNameFromPath(folderPath);
+  const ruleSummary = `${rules.format.toUpperCase()} - ${rules.maxFileSizeMb || '0'} MB max`;
+
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <FolderIcon className="h-4 w-4 shrink-0 text-accent" />
-          <h1 className="truncate text-[18px] font-semibold text-ink">{preview?.projectName || 'Project'}</h1>
-          <span className="rounded-[7px] border border-success/20 bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success-strong">
-            Local
-          </span>
+    <div className="flex items-start justify-between gap-4 border-b border-line bg-white/72 px-6 py-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-line bg-white text-accent">
+          <FolderIcon className="h-4.5 w-4.5" />
         </div>
-        <p className="mt-1 truncate text-[12px] text-muted">{folderPath}</p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-[17px] font-semibold text-ink">{projectName}</h1>
+            <span className="rounded-[6px] border border-success/24 bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success-strong">
+              Local
+            </span>
+          </div>
+          <p className="mt-1 truncate text-[12px] text-muted" title={folderPath}>
+            {folderPath}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+            <span className="rounded-[6px] bg-black/[0.045] px-2 py-1">{ruleSummary}</span>
+            <span className="rounded-[6px] bg-black/[0.045] px-2 py-1">
+              {rules.includePatterns.length + rules.excludePatterns.length} custom patterns
+            </span>
+          </div>
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Button onClick={onChooseFolder} size="sm" variant="toolbar">
           Choose
         </Button>
         <Button onClick={onOpenRules} size="sm" variant="toolbar">
-          Rules
+          Edit Rules
         </Button>
         {busy ? (
           <Button onClick={onCancel} size="sm" variant="danger">
@@ -97,23 +132,23 @@ function ProjectHeader({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function EmptyProjects({
   isDragging,
   onChooseFolder,
-  dragHandlers
+  dragHandlers,
 }: {
-  isDragging: boolean
-  onChooseFolder: () => void
-  dragHandlers: Pick<WorkspaceProps, 'onDragEnter' | 'onDragLeave' | 'onDragOver' | 'onDrop'>
+  isDragging: boolean;
+  onChooseFolder: () => void;
+  dragHandlers: Pick<WorkspaceProps, 'onDragEnter' | 'onDragLeave' | 'onDragOver' | 'onDrop'>;
 }): ReactElement {
   return (
     <div
       className={cn(
         'm-6 flex min-h-[420px] flex-col items-center justify-center rounded-[16px] border border-dashed border-line-strong bg-white/62 p-8 text-center transition',
-        isDragging ? 'border-accent bg-accent/5 shadow-[0_0_0_1px_rgba(10,132,255,0.22)]' : null
+        isDragging ? 'border-accent bg-accent/5 shadow-[0_0_0_1px_rgba(10,132,255,0.22)]' : null,
       )}
       onDragEnter={dragHandlers.onDragEnter}
       onDragLeave={dragHandlers.onDragLeave}
@@ -131,30 +166,45 @@ function EmptyProjects({
         Choose Folder
       </Button>
     </div>
-  )
+  );
 }
 
 function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElement {
-  const metrics = toPreviewMetrics(preview)
-  const rows = preview?.includedFiles.slice(0, 12) ?? []
+  const metrics = toPreviewMetrics(preview);
+  const rows = preview?.includedFiles.slice(0, 12) ?? [];
 
   return (
-    <section className="rounded-[14px] border border-line bg-white/76 shadow-panel">
+    <section className="rounded-[10px] border border-line bg-white/86">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <h2 className="text-[14px] font-semibold text-ink">Preview</h2>
-          <p className="mt-0.5 text-[12px] text-muted">Included files and estimated output.</p>
+          <p className="mt-0.5 text-[12px] text-muted">
+            Review the bundle before generating output.
+          </p>
         </div>
         <TableIcon className="h-4 w-4 text-muted" />
       </div>
-      <div className="grid grid-cols-4 gap-2 p-4">
-        <MetricCard label="Included" value={String(metrics.includedFiles)} />
-        <MetricCard label="Skipped" value={String(metrics.skippedFiles)} />
-        <MetricCard label="Tokens" value={metrics.estimatedTokens} />
-        <MetricCard label="Size" value={metrics.estimatedOutput} />
+      <div className="grid grid-cols-4 divide-x divide-line border-b border-line bg-black/[0.018]">
+        {[
+          ['Included', String(metrics.includedFiles)],
+          ['Skipped', String(metrics.skippedFiles)],
+          ['Tokens', metrics.estimatedTokens],
+          ['Estimate', metrics.estimatedOutput],
+        ].map(([label, value]) => (
+          <div key={label} className="px-4 py-3">
+            <div className="text-[11px] font-medium text-muted">{label}</div>
+            <div className="mt-1 truncate text-[16px] font-semibold text-ink">{value}</div>
+          </div>
+        ))}
       </div>
       {preview ? (
-        <>
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[12px] font-medium text-ink/82 hover:bg-black/[0.025]">
+            <span>Included files</span>
+            <span className="text-[11px] font-normal text-muted">
+              Showing {rows.length} of {preview.includedFiles.length}
+            </span>
+          </summary>
           <div className="border-t border-line px-4 py-3">
             {preview.fileTypes.length === 0 ? null : (
               <div className="mb-3 flex flex-wrap gap-1.5">
@@ -181,7 +231,9 @@ function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElem
                   {rows.map((file) => (
                     <tr key={file.relativePath} className="border-t border-line">
                       <td className="truncate px-3 py-2 text-ink/86">{file.relativePath}</td>
-                      <td className="truncate px-3 py-2 text-muted">{file.label || file.language}</td>
+                      <td className="truncate px-3 py-2 text-muted">
+                        {file.label || file.language}
+                      </td>
                       <td className="px-3 py-2 text-right text-muted">{formatBytes(file.size)}</td>
                     </tr>
                   ))}
@@ -189,12 +241,12 @@ function PreviewPanel({ preview }: { preview: PreviewResult | null }): ReactElem
               </table>
             </div>
           </div>
-        </>
+        </details>
       ) : (
-        <p className="border-t border-line px-4 py-4 text-[12px] text-muted">Preview starts after folder selection.</p>
+        <p className="px-4 py-4 text-[12px] text-muted">Preview starts after folder selection.</p>
       )}
     </section>
-  )
+  );
 }
 
 function PipelinePanel({
@@ -202,59 +254,134 @@ function PipelinePanel({
   phase,
   progressCounts,
   preview,
-  generated
+  generated,
 }: {
-  busy: boolean
-  phase: string
-  progressCounts: { processed?: number; total?: number }
-  preview: PreviewResult | null
-  generated: GenerateResult | null
+  busy: boolean;
+  phase: string;
+  progressCounts: { processed?: number; total?: number };
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
 }): ReactElement {
-  const total = progressCounts.total ?? preview?.includedFiles.length ?? 0
-  const processed = progressCounts.processed ?? 0
-  const progress = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0
+  const total = progressCounts.total ?? preview?.includedFiles.length ?? 0;
+  const processed = progressCounts.processed ?? 0;
+  const progress = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
 
   return (
-    <section className="rounded-[14px] border border-line bg-white/76 p-4 shadow-panel">
+    <section className="rounded-[10px] border border-line bg-white/86 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-[14px] font-semibold text-ink">Pipeline</h2>
-          <p className="mt-0.5 text-[12px] text-muted">{phase || (generated ? 'Generated' : preview ? 'Ready' : 'Waiting')}</p>
+          <p className="mt-0.5 text-[12px] text-muted">
+            {phase || (generated ? 'Generated' : preview ? 'Ready' : 'Waiting')}
+          </p>
         </div>
-        <span className={cn('rounded-[7px] px-2 py-1 text-[11px] font-medium', busy ? 'bg-warning-soft text-warning-strong' : 'bg-success-soft text-success-strong')}>
+        <span
+          className={cn(
+            'rounded-[7px] px-2 py-1 text-[11px] font-medium',
+            busy ? 'bg-warning-soft text-warning-strong' : 'bg-success-soft text-success-strong',
+          )}
+        >
           {busy ? 'Running' : 'Idle'}
         </span>
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/[0.06]">
-        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${busy ? Math.max(progress, 8) : generated ? 100 : 0}%` }} />
+        <div
+          className="h-full rounded-full bg-accent transition-all"
+          style={{ width: `${busy ? Math.max(progress, 8) : generated ? 100 : 0}%` }}
+        />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-[12px] text-muted">
-        <div className="rounded-[9px] bg-black/[0.035] p-2">
+        <div className="rounded-[8px] bg-black/[0.035] p-2">
           <div className="font-medium text-ink">{preview ? 'Ready' : 'Pending'}</div>
           <div>Preview</div>
         </div>
-        <div className="rounded-[9px] bg-black/[0.035] p-2">
-          <div className="font-medium text-ink">{busy ? `${processed}/${total || '-'}` : generated ? 'Complete' : 'Idle'}</div>
+        <div className="rounded-[8px] bg-black/[0.035] p-2">
+          <div className="font-medium text-ink">
+            {busy ? `${processed}/${total || '-'}` : generated ? 'Complete' : 'Idle'}
+          </div>
           <div>Generate</div>
         </div>
-        <div className="rounded-[9px] bg-black/[0.035] p-2">
-          <div className="font-medium text-ink">{generated ? formatBytes(generated.outputBytes) : '-'}</div>
-          <div>Output</div>
+        <div className="rounded-[8px] bg-black/[0.035] p-2">
+          <div className="font-medium text-ink">
+            {generated ? formatBytes(generated.outputBytes) : '-'}
+          </div>
+          <div>Generated output</div>
         </div>
       </div>
     </section>
-  )
+  );
 }
 
-function OutputEditor({ generated }: { generated: GenerateResult | null }): ReactElement {
+function OutputEditor({
+  generated,
+  savedFilePath,
+  onCopy,
+  onSave,
+  onOpenSavedFile,
+  onRevealSavedFile,
+  onClearOutput,
+}: {
+  generated: GenerateResult | null;
+  savedFilePath: string | null;
+  onCopy: () => void;
+  onSave: () => void;
+  onOpenSavedFile: () => void;
+  onRevealSavedFile: () => void;
+  onClearOutput: () => void;
+}): ReactElement {
+  const hasOutput = Boolean(generated?.output);
+
   return (
-    <section className="flex min-h-[320px] flex-col rounded-[14px] border border-line bg-white/76 shadow-panel">
+    <section className="flex min-h-[260px] flex-col rounded-[10px] border border-line bg-white/86">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
-          <h2 className="text-[14px] font-semibold text-ink">Output</h2>
-          <p className="mt-0.5 text-[12px] text-muted">{generated ? `${generated.format} - ${formatBytes(generated.outputBytes)}` : 'Generate to populate output.'}</p>
+          <h2 className="text-[14px] font-semibold text-ink">Generated output</h2>
+          <p className="mt-0.5 text-[12px] text-muted">
+            {generated
+              ? `${generated.format} - ${formatBytes(generated.outputBytes)}`
+              : 'Generate to unlock copy, save, open, and reveal.'}
+          </p>
         </div>
-        <FileIcon className="h-4 w-4 text-muted" />
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <Button
+            disabled={!hasOutput}
+            leftIcon={<CopyIcon className="h-3.5 w-3.5" />}
+            onClick={onCopy}
+            size="sm"
+          >
+            Copy
+          </Button>
+          <Button
+            disabled={!hasOutput}
+            leftIcon={<FileIcon className="h-3.5 w-3.5" />}
+            onClick={onSave}
+            size="sm"
+            variant={hasOutput ? 'primary' : 'secondary'}
+          >
+            Save
+          </Button>
+          <Button
+            disabled={!savedFilePath}
+            leftIcon={<ExternalIcon className="h-3.5 w-3.5" />}
+            onClick={onOpenSavedFile}
+            size="sm"
+            variant="toolbar"
+          >
+            Open
+          </Button>
+          <Button
+            disabled={!savedFilePath}
+            leftIcon={<FolderIcon className="h-3.5 w-3.5" />}
+            onClick={onRevealSavedFile}
+            size="sm"
+            variant="toolbar"
+          >
+            Reveal
+          </Button>
+          <Button disabled={!hasOutput} onClick={onClearOutput} size="sm" variant="ghost">
+            Clear
+          </Button>
+        </div>
       </div>
       <textarea
         className="min-h-0 flex-1 resize-none border-0 bg-transparent p-4 font-mono text-[12px] leading-5 text-ink outline-none"
@@ -263,7 +390,7 @@ function OutputEditor({ generated }: { generated: GenerateResult | null }): Reac
         placeholder="Generated content will appear here."
       />
     </section>
-  )
+  );
 }
 
 function ProjectsView(props: WorkspaceProps): ReactElement {
@@ -274,12 +401,12 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
           onDragEnter: props.onDragEnter,
           onDragLeave: props.onDragLeave,
           onDragOver: props.onDragOver,
-          onDrop: props.onDrop
+          onDrop: props.onDrop,
         }}
         isDragging={props.isDragging}
         onChooseFolder={props.onChooseFolder}
       />
-    )
+    );
   }
 
   return (
@@ -299,6 +426,7 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
         onOpenRules={props.onOpenRules}
         preview={props.preview}
         readyToGenerate={props.readyToGenerate}
+        rules={props.rules}
       />
       <div className="grid gap-4 p-5">
         <PreviewPanel preview={props.preview} />
@@ -309,10 +437,18 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
           preview={props.preview}
           progressCounts={props.progressCounts}
         />
-        <OutputEditor generated={props.generated} />
+        <OutputEditor
+          generated={props.generated}
+          onClearOutput={props.onClearOutput}
+          onCopy={props.onCopy}
+          onOpenSavedFile={props.onOpenSavedFile}
+          onRevealSavedFile={props.onRevealSavedFile}
+          onSave={props.onSave}
+          savedFilePath={props.savedFilePath}
+        />
       </div>
     </div>
-  )
+  );
 }
 
 function RunsView({ runs }: { runs: RunRecord[] }): ReactElement {
@@ -343,10 +479,16 @@ function RunsView({ runs }: { runs: RunRecord[] }): ReactElement {
                 <tr key={run.id} className="border-t border-line">
                   <td className="truncate px-3 py-2 text-ink/86">{run.projectName}</td>
                   <td className="px-3 py-2 text-muted">{run.createdAt}</td>
-                  <td className="px-3 py-2 text-right text-muted">{run.tokenCount.toLocaleString()}</td>
-                  <td className="px-3 py-2 text-right text-muted">{formatBytes(run.outputBytes)}</td>
+                  <td className="px-3 py-2 text-right text-muted">
+                    {run.tokenCount.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-right text-muted">
+                    {formatBytes(run.outputBytes)}
+                  </td>
                   <td className="px-3 py-2">
-                    <span className="rounded-[7px] bg-black/[0.04] px-2 py-1 text-[11px] text-ink/72">{run.status}</span>
+                    <span className="rounded-[7px] bg-black/[0.04] px-2 py-1 text-[11px] text-ink/72">
+                      {run.status}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -355,15 +497,18 @@ function RunsView({ runs }: { runs: RunRecord[] }): ReactElement {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function SettingsView({
   rules,
   onRulesChange,
   onAddPattern,
-  onRemovePattern
-}: Pick<WorkspaceProps, 'rules' | 'onRulesChange' | 'onAddPattern' | 'onRemovePattern'>): ReactElement {
+  onRemovePattern,
+}: Pick<
+  WorkspaceProps,
+  'rules' | 'onRulesChange' | 'onAddPattern' | 'onRemovePattern'
+>): ReactElement {
   return (
     <div className="min-h-0 overflow-auto p-6">
       <div className="mb-4 flex items-center gap-2">
@@ -400,23 +545,28 @@ function SettingsView({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {(['include', 'exclude'] as const).map((kind) => {
-              const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
-              const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
+              const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
+              const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
 
               return (
                 <div key={kind} className="rounded-[12px] border border-line bg-black/[0.025] p-3">
-                  <label className="text-[12px] font-medium capitalize text-ink/82" htmlFor={`settings-${kind}`}>
+                  <label
+                    className="text-[12px] font-medium capitalize text-ink/82"
+                    htmlFor={`settings-${kind}`}
+                  >
                     {kind} patterns
                   </label>
                   <div className="mt-2 flex gap-2">
                     <input
                       className="h-9 min-w-0 flex-1 rounded-[9px] border border-line bg-white/80 px-3 py-0 text-[13px] text-ink outline-none focus:border-accent"
                       id={`settings-${kind}`}
-                      onChange={(event) => onRulesChange({ ...rules, [inputKey]: event.target.value })}
+                      onChange={(event) =>
+                        onRulesChange({ ...rules, [inputKey]: event.target.value })
+                      }
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
-                          event.preventDefault()
-                          onAddPattern(kind)
+                          event.preventDefault();
+                          onAddPattern(kind);
                         }
                       }}
                       value={rules[inputKey]}
@@ -440,16 +590,18 @@ function SettingsView({
                         </span>
                       </button>
                     ))}
-                    {rules[listKey].length === 0 ? <p className="text-[12px] text-muted">No patterns.</p> : null}
+                    {rules[listKey].length === 0 ? (
+                      <p className="text-[12px] text-muted">No patterns.</p>
+                    ) : null}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </section>
     </div>
-  )
+  );
 }
 
 export function Workspace(props: WorkspaceProps): ReactElement {
@@ -475,5 +627,5 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         />
       ) : null}
     </main>
-  )
+  );
 }

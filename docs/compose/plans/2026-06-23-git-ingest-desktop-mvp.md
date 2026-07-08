@@ -13,6 +13,7 @@
 ### Task 1: Bootstrap the workspace
 
 **Files:**
+
 - Create: `package.json`
 - Create: `tsconfig.base.json`
 - Create: `.gitignore`
@@ -39,6 +40,7 @@ Expected: workspace dependencies installed without errors
 ### Task 2: Build shared core with tests
 
 **Files:**
+
 - Create: `packages/core/package.json`
 - Create: `packages/core/tsconfig.json`
 - Create: `packages/core/src/index.ts`
@@ -72,6 +74,7 @@ Expected: all core tests pass
 ### Task 3: Restore the CLI on top of core
 
 **Files:**
+
 - Create: `packages/cli/package.json`
 - Create: `packages/cli/tsconfig.json`
 - Create: `packages/cli/src/cli.ts`
@@ -98,6 +101,7 @@ Expected: all CLI tests pass
 ### Task 4: Build secure desktop main/preload IPC
 
 **Files:**
+
 - Create: `packages/desktop/package.json`
 - Create: `packages/desktop/tsconfig.json`
 - Create: `packages/desktop/electron.vite.config.ts`
@@ -129,6 +133,7 @@ Expected: validation tests pass
 ### Task 5: Build the renderer MVP and verify end-to-end
 
 **Files:**
+
 - Create: `packages/desktop/src/renderer/index.html`
 - Create: `packages/desktop/src/renderer/src/main.tsx`
 - Create: `packages/desktop/src/renderer/src/App.tsx`

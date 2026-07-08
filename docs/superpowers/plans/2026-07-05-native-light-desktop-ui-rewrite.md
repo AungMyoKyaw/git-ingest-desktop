@@ -149,17 +149,17 @@ Expected: `bun.lock` changes and installation succeeds with exit code 0.
 Edit `packages/desktop/electron.vite.config.ts` to include Tailwind's Vite plugin for the renderer:
 
 ```ts
-import { defineConfig } from 'electron-vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'electron-vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   main: {},
   preload: {},
   renderer: {
-    plugins: [react(), tailwindcss()]
-  }
-})
+    plugins: [react(), tailwindcss()],
+  },
+});
 ```
 
 - [ ] **Step 5: Run baseline verification**
@@ -203,42 +203,42 @@ Expected: one dependency/setup commit.
 Create `packages/desktop/src/renderer/src/features/ingest/model/types.ts`:
 
 ```ts
-import type { DesktopError, GenerateResult, PreviewResult } from '../../../env'
+import type { DesktopError, GenerateResult, PreviewResult } from '../../../env';
 
-export type AppView = 'projects' | 'runs' | 'settings'
+export type AppView = 'projects' | 'runs' | 'settings';
 
 export type RunRecord = {
-  id: string
-  projectName: string
-  createdAt: string
-  tokenCount: number
-  outputBytes: number
-  status: 'success' | 'cancelled' | 'error'
-}
+  id: string;
+  projectName: string;
+  createdAt: string;
+  tokenCount: number;
+  outputBytes: number;
+  status: 'success' | 'cancelled' | 'error';
+};
 
 export type RulesDraft = {
-  format: 'markdown' | 'text'
-  maxFileSizeMb: string
-  includeInput: string
-  excludeInput: string
-  includePatterns: string[]
-  excludePatterns: string[]
-}
+  format: 'markdown' | 'text';
+  maxFileSizeMb: string;
+  includeInput: string;
+  excludeInput: string;
+  includePatterns: string[];
+  excludePatterns: string[];
+};
 
 export type FeedbackState = {
-  message: string
-  error: DesktopError | null
-}
+  message: string;
+  error: DesktopError | null;
+};
 
 export type IngestSnapshot = {
-  folderPath: string
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  savedFilePath: string | null
-  phase: string
-  busy: boolean
-  activeRequestId: string | null
-}
+  folderPath: string;
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  savedFilePath: string | null;
+  phase: string;
+  busy: boolean;
+  activeRequestId: string | null;
+};
 ```
 
 - [ ] **Step 2: Add failing helper tests**
@@ -246,16 +246,16 @@ export type IngestSnapshot = {
 Create `packages/desktop/src/renderer/src/features/ingest/model/view-model.test.ts`:
 
 ```ts
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
 import {
   bytesToMegabytes,
   formatBytes,
   makeRequestKey,
   projectNameFromPath,
-  toPreviewMetrics
-} from './view-model'
-import type { PreviewResult } from '../../../env'
+  toPreviewMetrics,
+} from './view-model';
+import type { PreviewResult } from '../../../env';
 
 const preview: PreviewResult = {
   projectName: 'git-ingest',
@@ -263,32 +263,32 @@ const preview: PreviewResult = {
   totalFiles: 5,
   includedFiles: [
     { relativePath: 'README.md', size: 1000, label: 'Markdown', language: 'Markdown' },
-    { relativePath: 'src/App.tsx', size: 2000, label: 'TypeScript', language: 'TypeScript' }
+    { relativePath: 'src/App.tsx', size: 2000, label: 'TypeScript', language: 'TypeScript' },
   ],
   skippedFiles: [{ relativePath: 'dist/app.js', reason: 'ignored' }],
   ignoredDirectories: [{ path: 'node_modules', reason: 'default ignore' }],
   fileTypes: [{ label: 'TypeScript', count: 1, percentage: 50 }],
   estimatedTokenCount: 12345,
   estimatedOutputBytes: 654321,
-  warnings: ['Large output']
-}
+  warnings: ['Large output'],
+};
 
 describe('renderer view-model helpers', () => {
   it('formats bytes compactly', () => {
-    expect(formatBytes(512)).toBe('512 B')
-    expect(formatBytes(1536)).toBe('1.5 KB')
-    expect(formatBytes(2 * 1024 * 1024)).toBe('2.0 MB')
-  })
+    expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(1536)).toBe('1.5 KB');
+    expect(formatBytes(2 * 1024 * 1024)).toBe('2.0 MB');
+  });
 
   it('converts bytes to megabytes for settings hydration', () => {
-    expect(bytesToMegabytes(10 * 1024 * 1024)).toBe(10)
-  })
+    expect(bytesToMegabytes(10 * 1024 * 1024)).toBe(10);
+  });
 
   it('derives project name from POSIX and Windows paths', () => {
-    expect(projectNameFromPath('/Users/a/project')).toBe('project')
-    expect(projectNameFromPath('C:\\\\Users\\\\a\\\\project')).toBe('project')
-    expect(projectNameFromPath('')).toBe('project')
-  })
+    expect(projectNameFromPath('/Users/a/project')).toBe('project');
+    expect(projectNameFromPath('C:\\\\Users\\\\a\\\\project')).toBe('project');
+    expect(projectNameFromPath('')).toBe('project');
+  });
 
   it('creates stable request keys regardless of pattern order', () => {
     const first = makeRequestKey({
@@ -296,27 +296,27 @@ describe('renderer view-model helpers', () => {
       format: 'markdown',
       maxFileSizeBytes: 1024,
       includePatterns: ['b', 'a'],
-      excludePatterns: ['dist', '.git']
-    })
+      excludePatterns: ['dist', '.git'],
+    });
     const second = makeRequestKey({
       rootDir: '/tmp/project',
       format: 'markdown',
       maxFileSizeBytes: 1024,
       includePatterns: ['a', 'b'],
-      excludePatterns: ['.git', 'dist']
-    })
-    expect(first).toBe(second)
-  })
+      excludePatterns: ['.git', 'dist'],
+    });
+    expect(first).toBe(second);
+  });
 
   it('maps preview metrics for inspector and workspace panels', () => {
     expect(toPreviewMetrics(preview)).toEqual({
       includedFiles: 2,
       skippedFiles: 1,
       estimatedTokens: '12,345',
-      estimatedOutput: '639.0 KB'
-    })
-  })
-})
+      estimatedOutput: '639.0 KB',
+    });
+  });
+});
 ```
 
 - [ ] **Step 3: Run the new tests and verify failure**
@@ -334,61 +334,61 @@ Expected: fail because `view-model.ts` does not exist yet.
 Create `packages/desktop/src/renderer/src/features/ingest/model/view-model.ts`:
 
 ```ts
-import type { PreviewResult } from '../../../env'
+import type { PreviewResult } from '../../../env';
 
 export function bytesToMegabytes(value: number): number {
-  return Number((value / (1024 * 1024)).toFixed(1))
+  return Number((value / (1024 * 1024)).toFixed(1));
 }
 
 export function megabytesToBytes(value: string): number {
-  return Math.max(1, Math.round(Number(value || '0') * 1024 * 1024))
+  return Math.max(1, Math.round(Number(value || '0') * 1024 * 1024));
 }
 
 export function formatBytes(value: number): string {
-  if (value < 1024) return `${value} B`
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function projectNameFromPath(folderPath: string): string {
-  return folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'project'
+  return folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'project';
 }
 
 export function makeRequestKey(payload: {
-  rootDir: string
-  format: 'markdown' | 'text'
-  maxFileSizeBytes: number
-  includePatterns: string[]
-  excludePatterns: string[]
+  rootDir: string;
+  format: 'markdown' | 'text';
+  maxFileSizeBytes: number;
+  includePatterns: string[];
+  excludePatterns: string[];
 }): string {
   return JSON.stringify({
     ...payload,
     includePatterns: [...payload.includePatterns].sort(),
-    excludePatterns: [...payload.excludePatterns].sort()
-  })
+    excludePatterns: [...payload.excludePatterns].sort(),
+  });
 }
 
 export function toPreviewMetrics(preview: PreviewResult | null): {
-  includedFiles: number
-  skippedFiles: number
-  estimatedTokens: string
-  estimatedOutput: string
+  includedFiles: number;
+  skippedFiles: number;
+  estimatedTokens: string;
+  estimatedOutput: string;
 } {
   if (!preview) {
     return {
       includedFiles: 0,
       skippedFiles: 0,
       estimatedTokens: '0',
-      estimatedOutput: '0 B'
-    }
+      estimatedOutput: '0 B',
+    };
   }
 
   return {
     includedFiles: preview.includedFiles.length,
     skippedFiles: preview.skippedFiles.length,
     estimatedTokens: preview.estimatedTokenCount.toLocaleString(),
-    estimatedOutput: formatBytes(preview.estimatedOutputBytes)
-  }
+    estimatedOutput: formatBytes(preview.estimatedOutputBytes),
+  };
 }
 ```
 
@@ -441,7 +441,7 @@ Create `packages/desktop/src/renderer/src/shared/lib/cn.ts`:
 
 ```ts
 export function cn(...values: Array<string | false | null | undefined>): string {
-  return values.filter(Boolean).join(' ')
+  return values.filter(Boolean).join(' ');
 }
 ```
 
@@ -450,64 +450,131 @@ export function cn(...values: Array<string | false | null | undefined>): string 
 Create `packages/desktop/src/renderer/src/shared/icons/Icons.tsx` with local SVG icons:
 
 ```tsx
-import type { ReactElement, SVGProps } from 'react'
+import type { ReactElement, SVGProps } from 'react';
 
-type IconProps = SVGProps<SVGSVGElement>
+type IconProps = SVGProps<SVGSVGElement>;
 
 function IconShell({ children, ...props }: IconProps): ReactElement {
   return (
-    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" {...props}>
+    <svg
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+      {...props}
+    >
       {children}
     </svg>
-  )
+  );
 }
 
 export function CheckIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="m5 12 4 4L19 6" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="m5 12 4 4L19 6" />
+    </IconShell>
+  );
 }
 
 export function ClockIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><circle cx="12" cy="12" r="8" /><path d="M12 8v5l3 2" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v5l3 2" />
+    </IconShell>
+  );
 }
 
 export function CopyIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><rect height="11" rx="2" width="11" x="8" y="8" /><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <rect height="11" rx="2" width="11" x="8" y="8" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </IconShell>
+  );
 }
 
 export function ExternalIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="M14 4h6v6" /><path d="m10 14 10-10" /><path d="M20 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="M14 4h6v6" />
+      <path d="m10 14 10-10" />
+      <path d="M20 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4" />
+    </IconShell>
+  );
 }
 
 export function FileIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" /><path d="M14 3v5h5" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+    </IconShell>
+  );
 }
 
 export function FolderIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+    </IconShell>
+  );
 }
 
 export function PlayIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="m8 5 11 7-11 7Z" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="m8 5 11 7-11 7Z" />
+    </IconShell>
+  );
 }
 
 export function SearchIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </IconShell>
+  );
 }
 
 export function SettingsIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.4 7A2 2 0 0 1 7.2 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 20 7.2l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1Z" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.4 7A2 2 0 0 1 7.2 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 20 7.2l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1Z" />
+    </IconShell>
+  );
 }
 
 export function ShieldIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+    </IconShell>
+  );
 }
 
 export function SidebarIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><rect height="16" rx="2" width="18" x="3" y="4" /><path d="M9 4v16" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <rect height="16" rx="2" width="18" x="3" y="4" />
+      <path d="M9 4v16" />
+    </IconShell>
+  );
 }
 
 export function TableIcon(props: IconProps): ReactElement {
-  return <IconShell {...props}><rect height="16" rx="2" width="18" x="3" y="4" /><path d="M3 10h18" /><path d="M9 10v10" /></IconShell>
+  return (
+    <IconShell {...props}>
+      <rect height="16" rx="2" width="18" x="3" y="4" />
+      <path d="M3 10h18" />
+      <path d="M9 10v10" />
+    </IconShell>
+  );
 }
 ```
 
@@ -516,42 +583,54 @@ export function TableIcon(props: IconProps): ReactElement {
 Create `packages/desktop/src/renderer/src/shared/ui/Button.tsx`:
 
 ```tsx
-import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 
-import { cn } from '../lib/cn'
+import { cn } from '../lib/cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'toolbar'
-type ButtonSize = 'sm' | 'md' | 'lg'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'toolbar';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant
-  size?: ButtonSize
-  leftIcon?: ReactNode
-  rightIcon?: ReactNode
-}
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+};
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: 'native-button-shine bg-accent text-white shadow-[0_10px_26px_rgba(10,132,255,0.22)] hover:bg-accent-strong active:translate-y-px',
-  secondary: 'native-button-shine bg-white/80 text-ink ring-1 ring-line-strong hover:bg-black/[0.055] active:translate-y-px',
+  primary:
+    'native-button-shine bg-accent text-white shadow-[0_10px_26px_rgba(10,132,255,0.22)] hover:bg-accent-strong active:translate-y-px',
+  secondary:
+    'native-button-shine bg-white/80 text-ink ring-1 ring-line-strong hover:bg-black/[0.055] active:translate-y-px',
   ghost: 'bg-transparent text-muted hover:bg-black/[0.04] hover:text-ink active:translate-y-px',
-  toolbar: 'native-button-shine bg-black/[0.04] text-ink/86 ring-1 ring-line hover:bg-black/[0.055] active:translate-y-px',
-  danger: 'bg-danger-soft text-danger-strong ring-1 ring-danger/20 hover:bg-danger-soft active:translate-y-px'
-}
+  toolbar:
+    'native-button-shine bg-black/[0.04] text-ink/86 ring-1 ring-line hover:bg-black/[0.055] active:translate-y-px',
+  danger:
+    'bg-danger-soft text-danger-strong ring-1 ring-danger/20 hover:bg-danger-soft active:translate-y-px',
+};
 
 const sizeClass: Record<ButtonSize, string> = {
   sm: 'h-7 px-2.5 text-xs',
   md: 'h-9 px-3.5 text-[13px]',
-  lg: 'h-10 px-4 text-[13px]'
-}
+  lg: 'h-10 px-4 text-[13px]',
+};
 
-export function Button({ className, variant = 'secondary', size = 'md', leftIcon, rightIcon, children, ...props }: ButtonProps): ReactElement {
+export function Button({
+  className,
+  variant = 'secondary',
+  size = 'md',
+  leftIcon,
+  rightIcon,
+  children,
+  ...props
+}: ButtonProps): ReactElement {
   return (
     <button
       className={cn(
         'inline-flex select-none items-center justify-center gap-2 rounded-[10px] font-medium outline-none transition disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 focus-visible:ring-2 focus-visible:ring-accent/70',
         variantClass[variant],
         sizeClass[size],
-        className
+        className,
       )}
       type="button"
       {...props}
@@ -560,7 +639,7 @@ export function Button({ className, variant = 'secondary', size = 'md', leftIcon
       {children ? <span>{children}</span> : null}
       {rightIcon}
     </button>
-  )
+  );
 }
 ```
 
@@ -569,22 +648,26 @@ export function Button({ className, variant = 'secondary', size = 'md', leftIcon
 Create `packages/desktop/src/renderer/src/shared/ui/MetricCard.tsx`:
 
 ```tsx
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
 export type MetricCardProps = {
-  label: string
-  value: string
-  helper?: string
-}
+  label: string;
+  value: string;
+  helper?: string;
+};
 
 export function MetricCard({ label, value, helper }: MetricCardProps): ReactElement {
   return (
     <div className="rounded-[12px] border border-line bg-white/76 p-3 shadow-panel">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/38">{label}</div>
-      <div className="mt-2 truncate text-[18px] font-semibold tracking-[-0.02em] text-ink">{value}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/38">
+        {label}
+      </div>
+      <div className="mt-2 truncate text-[18px] font-semibold tracking-[-0.02em] text-ink">
+        {value}
+      </div>
       {helper ? <div className="mt-1 truncate text-[11px] text-muted">{helper}</div> : null}
     </div>
-  )
+  );
 }
 ```
 
@@ -593,17 +676,21 @@ export function MetricCard({ label, value, helper }: MetricCardProps): ReactElem
 Create `packages/desktop/src/renderer/src/shared/ui/SegmentedControl.tsx`:
 
 ```tsx
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
-import { cn } from '../lib/cn'
+import { cn } from '../lib/cn';
 
 export type SegmentedControlProps<T extends string> = {
-  items: ReadonlyArray<{ value: T; label: string }>
-  selected: T
-  onChange: (value: T) => void
-}
+  items: ReadonlyArray<{ value: T; label: string }>;
+  selected: T;
+  onChange: (value: T) => void;
+};
 
-export function SegmentedControl<T extends string>({ items, selected, onChange }: SegmentedControlProps<T>): ReactElement {
+export function SegmentedControl<T extends string>({
+  items,
+  selected,
+  onChange,
+}: SegmentedControlProps<T>): ReactElement {
   return (
     <div className="inline-flex h-8 items-center rounded-[9px] border border-line bg-black/[0.035] p-0.5">
       {items.map((item) => (
@@ -611,7 +698,9 @@ export function SegmentedControl<T extends string>({ items, selected, onChange }
           key={item.value}
           className={cn(
             'h-6 rounded-[7px] px-3 text-[12px] font-medium transition',
-            item.value === selected ? 'bg-white text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]' : 'text-muted hover:text-ink'
+            item.value === selected
+              ? 'bg-white text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'
+              : 'text-muted hover:text-ink',
           )}
           onClick={() => onChange(item.value)}
           type="button"
@@ -620,7 +709,7 @@ export function SegmentedControl<T extends string>({ items, selected, onChange }
         </button>
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -718,27 +807,32 @@ export function AppChrome({ isGenerating, canGenerate, onGenerate }: AppChromePr
 Create navigation and recent project list:
 
 ```tsx
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
-import type { AppState } from '../../../env'
-import type { AppView } from '../model/types'
-import { ClockIcon, FolderIcon, SettingsIcon } from '../../../shared/icons/Icons'
-import { cn } from '../../../shared/lib/cn'
+import type { AppState } from '../../../env';
+import type { AppView } from '../model/types';
+import { ClockIcon, FolderIcon, SettingsIcon } from '../../../shared/icons/Icons';
+import { cn } from '../../../shared/lib/cn';
 
 export type SidebarProps = {
-  selectedView: AppView
-  recentProjects: AppState['recentProjects']
-  onViewChange: (view: AppView) => void
-  onSelectRecentProject: (path: string) => void
-}
+  selectedView: AppView;
+  recentProjects: AppState['recentProjects'];
+  onViewChange: (view: AppView) => void;
+  onSelectRecentProject: (path: string) => void;
+};
 
 const navItems: Array<{ view: AppView; label: string; icon: typeof FolderIcon }> = [
   { view: 'projects', label: 'Projects', icon: FolderIcon },
   { view: 'runs', label: 'Runs', icon: ClockIcon },
-  { view: 'settings', label: 'Settings', icon: SettingsIcon }
-]
+  { view: 'settings', label: 'Settings', icon: SettingsIcon },
+];
 
-export function Sidebar({ selectedView, recentProjects, onViewChange, onSelectRecentProject }: SidebarProps): ReactElement {
+export function Sidebar({
+  selectedView,
+  recentProjects,
+  onViewChange,
+  onSelectRecentProject,
+}: SidebarProps): ReactElement {
   return (
     <aside className="native-sidebar flex min-h-0 flex-col border-r border-line">
       <div className="border-b border-line px-4 py-3">
@@ -753,26 +847,49 @@ export function Sidebar({ selectedView, recentProjects, onViewChange, onSelectRe
         </div>
       </div>
       <section className="px-3 pt-4">
-        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">Library</div>
+        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">
+          Library
+        </div>
         <div className="space-y-0.5">
           {navItems.map((item) => {
-            const Icon = item.icon
-            const selected = selectedView === item.view
+            const Icon = item.icon;
+            const selected = selectedView === item.view;
             return (
-              <button key={item.view} className={cn('flex h-8 w-full items-center gap-2.5 rounded-[8px] px-2 text-left text-[13px] transition', selected ? 'bg-accent text-white shadow-[0_8px_22px_rgba(10,132,255,0.18)]' : 'text-ink/68 hover:bg-black/[0.04] hover:text-ink')} onClick={() => onViewChange(item.view)} type="button">
+              <button
+                key={item.view}
+                className={cn(
+                  'flex h-8 w-full items-center gap-2.5 rounded-[8px] px-2 text-left text-[13px] transition',
+                  selected
+                    ? 'bg-accent text-white shadow-[0_8px_22px_rgba(10,132,255,0.18)]'
+                    : 'text-ink/68 hover:bg-black/[0.04] hover:text-ink',
+                )}
+                onClick={() => onViewChange(item.view)}
+                type="button"
+              >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
               </button>
-            )
+            );
           })}
         </div>
       </section>
       <section className="min-h-0 flex-1 px-3 pt-4">
-        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">Recent Projects</div>
+        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/36">
+          Recent Projects
+        </div>
         <div className="min-h-0 space-y-0.5 overflow-auto">
-          {recentProjects.length === 0 ? <p className="px-2 text-[12px] leading-5 text-muted">Recent folders appear after preview or generation.</p> : null}
+          {recentProjects.length === 0 ? (
+            <p className="px-2 text-[12px] leading-5 text-muted">
+              Recent folders appear after preview or generation.
+            </p>
+          ) : null}
           {recentProjects.map((project) => (
-            <button key={project.path} className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition hover:bg-black/[0.035]" onClick={() => onSelectRecentProject(project.path)} type="button">
+            <button
+              key={project.path}
+              className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition hover:bg-black/[0.035]"
+              onClick={() => onSelectRecentProject(project.path)}
+              type="button"
+            >
               <FolderIcon className="h-4 w-4 shrink-0 text-ink/50" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-medium text-ink/82">{project.name}</div>
@@ -783,7 +900,7 @@ export function Sidebar({ selectedView, recentProjects, onViewChange, onSelectRe
         </div>
       </section>
     </aside>
-  )
+  );
 }
 ```
 
@@ -792,21 +909,23 @@ export function Sidebar({ selectedView, recentProjects, onViewChange, onSelectRe
 Create status footer:
 
 ```tsx
-import type { ReactElement } from 'react'
+import type { ReactElement } from 'react';
 
-import type { GenerateResult, PreviewResult } from '../../../env'
-import { formatBytes } from '../model/view-model'
+import type { GenerateResult, PreviewResult } from '../../../env';
+import { formatBytes } from '../model/view-model';
 
 export type StatusBarProps = {
-  folderPath: string
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  phase: string
-}
+  folderPath: string;
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  phase: string;
+};
 
 export function StatusBar({ folderPath, preview, generated, phase }: StatusBarProps): ReactElement {
-  const outputState = generated ? `${formatBytes(generated.outputBytes)} output` : 'No output'
-  const previewState = preview ? `${preview.includedFiles.length} files · ${preview.estimatedTokenCount.toLocaleString()} tokens` : 'No preview'
+  const outputState = generated ? `${formatBytes(generated.outputBytes)} output` : 'No output';
+  const previewState = preview
+    ? `${preview.includedFiles.length} files · ${preview.estimatedTokenCount.toLocaleString()} tokens`
+    : 'No preview';
 
   return (
     <footer className="native-toolbar grid h-[26px] grid-cols-[260px_1fr_340px] border-t border-line text-[11px] text-muted">
@@ -823,7 +942,7 @@ export function StatusBar({ folderPath, preview, generated, phase }: StatusBarPr
         <span>{outputState}</span>
       </div>
     </footer>
-  )
+  );
 }
 ```
 
@@ -834,58 +953,58 @@ Create `Inspector.tsx`, `RulesSheet.tsx`, and `Workspace.tsx` with the prop surf
 Required prop surfaces:
 
 ```ts
-import type { DragEventHandler } from 'react'
+import type { DragEventHandler } from 'react';
 
 // Inspector.tsx
 export type InspectorProps = {
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  savedFilePath: string | null
-  error: DesktopError | null
-  message: string
-  onCopy: () => void
-  onSave: () => void
-  onOpenSavedFile: () => void
-  onRevealSavedFile: () => void
-  onClearOutput: () => void
-}
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  savedFilePath: string | null;
+  error: DesktopError | null;
+  message: string;
+  onCopy: () => void;
+  onSave: () => void;
+  onOpenSavedFile: () => void;
+  onRevealSavedFile: () => void;
+  onClearOutput: () => void;
+};
 
 // RulesSheet.tsx
 export type RulesSheetProps = {
-  rules: RulesDraft
-  onRulesChange: (rules: RulesDraft) => void
-  onAddPattern: (kind: 'include' | 'exclude') => void
-  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void
-  onClose: () => void
-}
+  rules: RulesDraft;
+  onRulesChange: (rules: RulesDraft) => void;
+  onAddPattern: (kind: 'include' | 'exclude') => void;
+  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void;
+  onClose: () => void;
+};
 
 // Workspace.tsx
 export type WorkspaceProps = {
-  selectedView: AppView
-  folderPath: string
-  preview: PreviewResult | null
-  generated: GenerateResult | null
-  runs: RunRecord[]
-  rules: RulesDraft
-  busy: boolean
-  readyToGenerate: boolean
-  phase: string
-  progressCounts: { processed?: number; total?: number }
-  isDragging: boolean
-  rulesOpen: boolean
-  onChooseFolder: () => void
-  onGenerate: () => void
-  onCancel: () => void
-  onOpenRules: () => void
-  onCloseRules: () => void
-  onRulesChange: (rules: RulesDraft) => void
-  onAddPattern: (kind: 'include' | 'exclude') => void
-  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void
-  onDragEnter: DragEventHandler<HTMLDivElement>
-  onDragLeave: DragEventHandler<HTMLDivElement>
-  onDragOver: DragEventHandler<HTMLDivElement>
-  onDrop: DragEventHandler<HTMLDivElement>
-}
+  selectedView: AppView;
+  folderPath: string;
+  preview: PreviewResult | null;
+  generated: GenerateResult | null;
+  runs: RunRecord[];
+  rules: RulesDraft;
+  busy: boolean;
+  readyToGenerate: boolean;
+  phase: string;
+  progressCounts: { processed?: number; total?: number };
+  isDragging: boolean;
+  rulesOpen: boolean;
+  onChooseFolder: () => void;
+  onGenerate: () => void;
+  onCancel: () => void;
+  onOpenRules: () => void;
+  onCloseRules: () => void;
+  onRulesChange: (rules: RulesDraft) => void;
+  onAddPattern: (kind: 'include' | 'exclude') => void;
+  onRemovePattern: (kind: 'include' | 'exclude', pattern: string) => void;
+  onDragEnter: DragEventHandler<HTMLDivElement>;
+  onDragLeave: DragEventHandler<HTMLDivElement>;
+  onDragOver: DragEventHandler<HTMLDivElement>;
+  onDrop: DragEventHandler<HTMLDivElement>;
+};
 ```
 
 Expected UI requirements:
@@ -931,13 +1050,17 @@ Expected: one feature UI commit.
 In `App.tsx`, remove local `bytesToMegabytes`, `formatBytes`, `projectNameFromPath`, and `makeRequestKey`. Import:
 
 ```ts
-import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types'
-import { bytesToMegabytes, makeRequestKey, megabytesToBytes } from './features/ingest/model/view-model'
-import { AppChrome } from './features/ingest/ui/AppChrome'
-import { Sidebar } from './features/ingest/ui/Sidebar'
-import { Workspace } from './features/ingest/ui/Workspace'
-import { Inspector } from './features/ingest/ui/Inspector'
-import { StatusBar } from './features/ingest/ui/StatusBar'
+import type { AppView, RulesDraft, RunRecord } from './features/ingest/model/types';
+import {
+  bytesToMegabytes,
+  makeRequestKey,
+  megabytesToBytes,
+} from './features/ingest/model/view-model';
+import { AppChrome } from './features/ingest/ui/AppChrome';
+import { Sidebar } from './features/ingest/ui/Sidebar';
+import { Workspace } from './features/ingest/ui/Workspace';
+import { Inspector } from './features/ingest/ui/Inspector';
+import { StatusBar } from './features/ingest/ui/StatusBar';
 ```
 
 - [ ] **Step 2: Add view, rules, and runs state**
@@ -945,17 +1068,17 @@ import { StatusBar } from './features/ingest/ui/StatusBar'
 In `App`, replace individual format/pattern input state with `RulesDraft`:
 
 ```ts
-const [selectedView, setSelectedView] = useState<AppView>('projects')
-const [rulesOpen, setRulesOpen] = useState(false)
-const [runs, setRuns] = useState<RunRecord[]>([])
+const [selectedView, setSelectedView] = useState<AppView>('projects');
+const [rulesOpen, setRulesOpen] = useState(false);
+const [runs, setRuns] = useState<RunRecord[]>([]);
 const [rules, setRules] = useState<RulesDraft>({
   format: 'markdown',
   maxFileSizeMb: '10',
   includeInput: '',
   excludeInput: '',
   includePatterns: [],
-  excludePatterns: []
-})
+  excludePatterns: [],
+});
 ```
 
 - [ ] **Step 3: Hydrate rules from saved state**
@@ -969,9 +1092,9 @@ setRules({
   includeInput: '',
   excludeInput: '',
   includePatterns: state.settings.includePatterns,
-  excludePatterns: state.settings.excludePatterns
-})
-setRulesOpen(false)
+  excludePatterns: state.settings.excludePatterns,
+});
+setRulesOpen(false);
 ```
 
 - [ ] **Step 4: Update request payload derivation**
@@ -979,13 +1102,16 @@ setRulesOpen(false)
 Replace `requestPayload` with:
 
 ```ts
-const requestPayload = useMemo(() => ({
-  rootDir: folderPath,
-  format: rules.format,
-  maxFileSizeBytes: megabytesToBytes(rules.maxFileSizeMb),
-  includePatterns: rules.includePatterns,
-  excludePatterns: rules.excludePatterns
-}), [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb])
+const requestPayload = useMemo(
+  () => ({
+    rootDir: folderPath,
+    format: rules.format,
+    maxFileSizeBytes: megabytesToBytes(rules.maxFileSizeMb),
+    includePatterns: rules.includePatterns,
+    excludePatterns: rules.excludePatterns,
+  }),
+  [folderPath, rules.excludePatterns, rules.format, rules.includePatterns, rules.maxFileSizeMb],
+);
 ```
 
 - [ ] **Step 5: Update pattern handlers**
@@ -994,24 +1120,24 @@ Replace `addPattern` with rules-based handlers:
 
 ```ts
 function addPattern(kind: 'include' | 'exclude') {
-  const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput'
-  const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
-  const value = rules[inputKey].trim()
-  if (!value) return
+  const inputKey = kind === 'include' ? 'includeInput' : 'excludeInput';
+  const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
+  const value = rules[inputKey].trim();
+  if (!value) return;
 
   setRules((current) => ({
     ...current,
     [inputKey]: '',
-    [listKey]: [...current[listKey], value]
-  }))
+    [listKey]: [...current[listKey], value],
+  }));
 }
 
 function removePattern(kind: 'include' | 'exclude', pattern: string) {
-  const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns'
+  const listKey = kind === 'include' ? 'includePatterns' : 'excludePatterns';
   setRules((current) => ({
     ...current,
-    [listKey]: current[listKey].filter((entry) => entry !== pattern)
-  }))
+    [listKey]: current[listKey].filter((entry) => entry !== pattern),
+  }));
 }
 ```
 
@@ -1027,26 +1153,30 @@ setRuns((current) => [
     createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     tokenCount: message.result.tokenEstimate,
     outputBytes: message.result.outputBytes,
-    status: 'success'
+    status: 'success',
   },
-  ...current
-])
+  ...current,
+]);
 ```
 
 For cancelled and error completion, add a run only if a folder is selected and a preview exists:
 
 ```ts
-setRuns((current) => folderPath && preview ? [
-  {
-    id: message.requestId,
-    projectName: preview.projectName,
-    createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    tokenCount: preview.estimatedTokenCount,
-    outputBytes: preview.estimatedOutputBytes,
-    status: message.status
-  },
-  ...current
-] : current)
+setRuns((current) =>
+  folderPath && preview
+    ? [
+        {
+          id: message.requestId,
+          projectName: preview.projectName,
+          createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          tokenCount: preview.estimatedTokenCount,
+          outputBytes: preview.estimatedOutputBytes,
+          status: message.status,
+        },
+        ...current,
+      ]
+    : current,
+);
 ```
 
 If closure freshness is an issue, use refs for `folderPath` and `preview`.
@@ -1063,12 +1193,12 @@ return (
       <div className="grid min-h-0 grid-cols-[260px_minmax(0,1fr)_340px]">
         <Sidebar
           onSelectRecentProject={(path) => {
-            setFolderPath(path)
-            setPreview(null)
-            setGenerated(null)
-            setSavedFilePath(null)
-            setLastPreviewKey(null)
-            setSelectedView('projects')
+            setFolderPath(path);
+            setPreview(null);
+            setGenerated(null);
+            setSavedFilePath(null);
+            setLastPreviewKey(null);
+            setSelectedView('projects');
           }}
           onViewChange={setSelectedView}
           recentProjects={recentProjects}
@@ -1084,12 +1214,12 @@ return (
           onChooseFolder={() => void chooseFolder()}
           onCloseRules={() => setRulesOpen(false)}
           onDragEnter={(event) => {
-            event.preventDefault()
-            setIsDragging(true)
+            event.preventDefault();
+            setIsDragging(true);
           }}
           onDragLeave={(event) => {
-            event.preventDefault()
-            if (event.currentTarget === event.target) setIsDragging(false)
+            event.preventDefault();
+            if (event.currentTarget === event.target) setIsDragging(false);
           }}
           onDragOver={(event) => event.preventDefault()}
           onDrop={handleDrop}
@@ -1111,9 +1241,9 @@ return (
           generated={generated}
           message={message}
           onClearOutput={() => {
-            setGenerated(null)
-            setSavedFilePath(null)
-            setMessage('')
+            setGenerated(null);
+            setSavedFilePath(null);
+            setMessage('');
           }}
           onCopy={() => void copyOutput()}
           onOpenSavedFile={() => void openSavedFile()}
@@ -1126,7 +1256,7 @@ return (
       <StatusBar folderPath={folderPath} generated={generated} phase={phase} preview={preview} />
     </div>
   </div>
-)
+);
 ```
 
 - [ ] **Step 8: Run desktop tests and build**
@@ -1165,10 +1295,12 @@ Expected: one integration commit.
 Replace the file with:
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    'Segoe UI', sans-serif;
   --color-app: #edf2f9;
   --color-window: #fbfcff;
   --color-toolbar: rgba(246, 248, 252, 0.86);
@@ -1206,7 +1338,7 @@ body {
   margin: 0;
   background:
     radial-gradient(circle at 14% 12%, rgba(10, 132, 255, 0.15), transparent 30%),
-    radial-gradient(circle at 86% 8%, rgba(120, 91, 255, 0.10), transparent 28%),
+    radial-gradient(circle at 86% 8%, rgba(120, 91, 255, 0.1), transparent 28%),
     linear-gradient(180deg, #f8fbff 0%, #edf2f9 52%, #e7edf6 100%);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -1228,7 +1360,7 @@ button {
 pre,
 code,
 .mono {
-  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: 'SF Mono', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 [data-electron-drag-region] {
@@ -1272,8 +1404,7 @@ select {
 
 .output-editor {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 254, 0.94)),
-    #ffffff;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 254, 0.94)), #ffffff;
 }
 
 ::-webkit-scrollbar {
@@ -1282,7 +1413,7 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(55, 65, 81, 0.20);
+  background: rgba(55, 65, 81, 0.2);
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: content-box;

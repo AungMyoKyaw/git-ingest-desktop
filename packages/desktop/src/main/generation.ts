@@ -1,85 +1,99 @@
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto';
 
-import { generateProjectOutput, toGitIngestError, type GenerateProjectResult, type ProgressEvent, type ScanProjectOptions } from '@git-ingest/core'
+import {
+  generateProjectOutput,
+  toGitIngestError,
+  type GenerateProjectResult,
+  type ProgressEvent,
+  type ScanProjectOptions,
+} from '@git-ingest/core';
 
 export interface GenerationProgressMessage extends ProgressEvent {
-  requestId: string
+  requestId: string;
 }
 
 export type GenerationFinishedMessage =
   | { requestId: string; status: 'success'; result: GenerateProjectResult }
-  | { requestId: string; status: 'cancelled'; error: { code: string; userMessage: string; detail: string | null } }
-  | { requestId: string; status: 'error'; error: { code: string; userMessage: string; detail: string | null } }
+  | {
+      requestId: string;
+      status: 'cancelled';
+      error: { code: string; userMessage: string; detail: string | null };
+    }
+  | {
+      requestId: string;
+      status: 'error';
+      error: { code: string; userMessage: string; detail: string | null };
+    };
 
 export interface GenerationSessionCallbacks {
-  onProgress: (message: GenerationProgressMessage) => void
-  onFinished: (message: GenerationFinishedMessage) => void
+  onProgress: (message: GenerationProgressMessage) => void;
+  onFinished: (message: GenerationFinishedMessage) => void;
 }
 
 export function createGenerationManager(callbacks: GenerationSessionCallbacks) {
-  let active: { requestId: string; controller: AbortController } | null = null
+  let active: { requestId: string; controller: AbortController } | null = null;
 
   async function start(options: ScanProjectOptions) {
     if (active) {
-      active.controller.abort()
+      active.controller.abort();
     }
 
-    const controller = new AbortController()
-    const requestId = randomUUID()
-    active = { requestId, controller }
+    const controller = new AbortController();
+    const requestId = randomUUID();
+    active = { requestId, controller };
 
     void generateProjectOutput({
       ...options,
       signal: controller.signal,
       onProgress: (event) => {
         if (active?.requestId !== requestId) {
-          return
+          return;
         }
 
-        callbacks.onProgress({ requestId, ...event })
-      }
+        callbacks.onProgress({ requestId, ...event });
+      },
     })
       .then((result) => {
         if (active?.requestId !== requestId) {
-          return
+          return;
         }
 
-        active = null
-        callbacks.onFinished({ requestId, status: 'success', result })
+        active = null;
+        callbacks.onFinished({ requestId, status: 'success', result });
       })
       .catch((error) => {
         if (active?.requestId !== requestId) {
-          return
+          return;
         }
 
-        active = null
-        const normalized = toGitIngestError(error)
+        active = null;
+        const normalized = toGitIngestError(error);
         callbacks.onFinished({
           requestId,
           status: normalized.code === 'CANCELLED' ? 'cancelled' : 'error',
           error: {
             code: normalized.code,
             userMessage: normalized.userMessage,
-            detail: normalized.detail ?? null
-          }
-        })
-      })
+            detail: normalized.detail ?? null,
+          },
+        });
+      });
 
-    return requestId
+    return requestId;
   }
 
   function cancel(requestId: string) {
     if (active?.requestId !== requestId) {
-      return false
+      return false;
     }
 
-    active.controller.abort()
-    return true
+    active.controller.abort();
+    return true;
   }
 
   function getActiveRequestId() {
-    return active?.requestId ?? null
+    return active?.requestId ?? null;
   }
 
-  return { start, cancel, getActiveRequestId }
+  return { start, cancel, getActiveRequestId };
 }
