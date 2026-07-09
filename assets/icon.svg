@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Git-Ingest icon</title>
+  <desc id="desc">A folded code bundle mark with connected git nodes.</desc>
+  <defs>
+    <linearGradient id="panel" x1="150" y1="76" x2="842" y2="914" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset=".42" stop-color="#eef6ff"/>
+      <stop offset="1" stop-color="#dffcf1"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="214" y1="166" x2="820" y2="850" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff7a45"/>
+      <stop offset=".48" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <filter id="shadow" x="60" y="40" width="904" height="944" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="34" stdDeviation="42" flood-color="#0f172a" flood-opacity=".22"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity=".14"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="#f8fafc"/>
+  <g filter="url(#shadow)">
+    <path d="M228 140h392l176 176v568H228z" fill="url(#panel)"/>
+    <path d="M620 140v176h176z" fill="#dbeafe"/>
+    <path d="M228 140h392l176 176v568H228z" fill="none" stroke="url(#edge)" stroke-width="34" stroke-linejoin="round"/>
+    <path d="M620 140v176h176" fill="none" stroke="#2563eb" stroke-width="28" stroke-linejoin="round"/>
+  </g>
+  <path d="M372 402l-74 74 74 74M652 402l74 74-74 74" fill="none" stroke="#0f172a" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M548 372l-72 208" fill="none" stroke="#0f172a" stroke-width="42" stroke-linecap="round"/>
+  <path d="M374 688h190c70 0 112-38 112-98v-28" fill="none" stroke="#2563eb" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="354" cy="688" r="48" fill="#ff7a45" stroke="#fff" stroke-width="20"/>
+  <circle cx="566" cy="688" r="48" fill="#2563eb" stroke="#fff" stroke-width="20"/>
+  <circle cx="676" cy="552" r="48" fill="#10b981" stroke="#fff" stroke-width="20"/>
+</svg>
