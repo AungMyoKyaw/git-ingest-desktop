@@ -30,6 +30,7 @@
   "build": {
     "appId": "com.aungmyokyaw.git-ingest",
     "productName": "Git-Ingest",
+    "executableName": "git-ingest",
     "directories": {
       "output": "release",
       "buildResources": "build"
