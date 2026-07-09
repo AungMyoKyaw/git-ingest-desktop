@@ -49,7 +49,7 @@ jobs:
             command: bunx electron-builder --mac --publish never
           - platform: windows
             os: windows-latest
-            command: bunx electron-builder --win --publish never
+            command: bunx electron-builder --win --x64 --publish never
           - platform: linux
             os: ubuntu-latest
             command: bunx electron-builder --linux --publish never
