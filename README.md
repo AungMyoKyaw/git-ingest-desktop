@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.svg" width="120" alt="Git-Ingest">
+</p>
+
 # Git-Ingest
 
 Git-Ingest is a local project-ingestion tool for AI workflows.
@@ -5,23 +9,7 @@ Git-Ingest is a local project-ingestion tool for AI workflows.
 This workspace contains:
 
 - `@git-ingest/core`: shared scan and output generation logic
-- `@git-ingest/cli`: the `git-ingest` command-line wrapper
 - `@git-ingest/desktop`: a secure Electron desktop app
-
-## CLI usage
-
-```bash
-git-ingest /path/to/project --format markdown --copy
-```
-
-Options:
-
-- `--format markdown|text`
-- `--max-size <bytes>`
-- `--include <pattern>` repeatable
-- `--exclude <pattern>` repeatable
-- `--output <file>`
-- `--copy`
 
 ## Development
 
