@@ -31,7 +31,8 @@
     "appId": "com.aungmyokyaw.git-ingest",
     "productName": "Git-Ingest",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "out/**/*",
@@ -41,10 +42,17 @@
       "main": "out/main/index.js"
     },
     "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
     "icon": "build/icons/icon.icns",
     "mac": {
       "icon": "build/icons/icon.icns",
       "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "notarize": true,
       "target": [
         {
           "target": "dmg",
@@ -63,11 +71,30 @@
       ]
     },
     "win": {
-      "icon": "build/icons/icon.ico"
+      "icon": "build/icons/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
     },
     "linux": {
       "icon": "build/icons/icon-512.png",
-      "category": "Development"
+      "category": "Development",
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }
