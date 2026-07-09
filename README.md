@@ -9,7 +9,12 @@
 </p>
 
 <p align="center">
-  <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue?style=plastic" alt="License: MIT"></a>
+  <a href="https://github.com/AungMyoKyaw/git-ingest-desktop/releases"><img src="https://img.shields.io/github/package-json/v/AungMyoKyaw/git-ingest-desktop?style=plastic" alt="Version"></a>
+  <a href="https://bun.sh"><img src="https://img.shields.io/badge/Bun-≥1.1.0-black?style=plastic&logo=bun" alt="Bun"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=plastic&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://www.electronjs.org"><img src="https://img.shields.io/badge/Electron-47848F?style=plastic&logo=electron&logoColor=white" alt="Electron"></a>
+  <a href="https://github.com/AungMyoKyaw/git-ingest-desktop/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=plastic" alt="PRs Welcome"></a>
 </p>
 
 ---
