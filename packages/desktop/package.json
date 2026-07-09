@@ -44,6 +44,8 @@
     "artifactName": "${productName}-${version}-${arch}.${ext}",
     "publish": {
       "provider": "github",
+      "owner": "AungMyoKyaw",
+      "repo": "git-ingest-desktop",
       "releaseType": "release"
     },
     "icon": "build/icons/icon.icns",
