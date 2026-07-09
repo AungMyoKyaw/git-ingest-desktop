@@ -2,7 +2,8 @@
   "name": "@git-ingest/desktop",
   "version": "0.1.0",
   "description": "Secure Electron desktop app for Git-Ingest",
-  "author": "Aung Myo Kyaw",
+  "author": "Aung Myo Kyaw <AungMyoKyaw@users.noreply.github.com>",
+  "homepage": "https://github.com/AungMyoKyaw/git-ingest-desktop",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
@@ -88,6 +89,7 @@
     "linux": {
       "icon": "build/icons/icon-512.png",
       "category": "Development",
+      "maintainer": "Aung Myo Kyaw <AungMyoKyaw@users.noreply.github.com>",
       "target": [
         "AppImage",
         "deb",
