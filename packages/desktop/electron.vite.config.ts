@@ -16,25 +16,12 @@ export default defineConfig({
       },
     },
     build: {
-      rollupOptions: {
-        output: {
-          format: 'es',
-        },
-      },
       externalizeDeps: {
         exclude: ['@git-ingest/core'],
       },
     },
   },
-  preload: {
-    build: {
-      rollupOptions: {
-        output: {
-          format: 'es',
-        },
-      },
-    },
-  },
+  preload: {},
   renderer: {
     plugins: [react(), tailwindcss()],
   },
