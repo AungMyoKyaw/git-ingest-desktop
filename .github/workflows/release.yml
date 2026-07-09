@@ -112,4 +112,4 @@ jobs:
           gh release create "$TAG_NAME" \
             --title "$TAG_NAME" \
             --notes "Release $TAG_NAME"
-          find release-assets -type f -print0 | xargs -0 gh release upload "$TAG_NAME"
+          find release-assets -type f -print0 | xargs -0 gh release upload "$TAG_NAME" --clobber
