@@ -12,30 +12,33 @@ Upgrade the entire build/release toolchain to use the latest Node.js runtime (No
 ### 1. Version Bumps
 
 #### Root `package.json`
-| Field | From | To |
-|-------|------|-----|
+
+| Field          | From        | To         |
+| -------------- | ----------- | ---------- |
 | `engines.node` | `>=22.12.0` | `>=26.0.0` |
-| `engines.bun` | `>=1.1.0` | `>=1.2.0` |
+| `engines.bun`  | `>=1.1.0`   | `>=1.2.0`  |
 
 #### Desktop `packages/desktop/package.json`
-| Dep | From | To |
-|-----|------|-----|
-| `electron` | `^43.0.0` | latest stable (~44.x) |
-| `electron-vite` | `^5.0.0` | latest `^5.x` |
-| `electron-builder` | `^26.15.3` | latest `^26.x` |
-| `vite` | `^8.1.3` | latest `^8.x` |
-| `@vitejs/plugin-react` | `^6.0.3` | latest `^6.x` |
-| `tailwindcss` | `^4.3.2` | latest `^4.x` |
-| `@tailwindcss/vite` | `^4.3.2` | latest `^4.x` |
-| `playwright` | `^1.61.1` | latest |
-| `react` | `^19.2.7` | latest `^19.x` |
-| `react-dom` | `^19.2.7` | latest `^19.x` |
+
+| Dep                    | From       | To                    |
+| ---------------------- | ---------- | --------------------- |
+| `electron`             | `^43.0.0`  | latest stable (~44.x) |
+| `electron-vite`        | `^5.0.0`   | latest `^5.x`         |
+| `electron-builder`     | `^26.15.3` | latest `^26.x`        |
+| `vite`                 | `^8.1.3`   | latest `^8.x`         |
+| `@vitejs/plugin-react` | `^6.0.3`   | latest `^6.x`         |
+| `tailwindcss`          | `^4.3.2`   | latest `^4.x`         |
+| `@tailwindcss/vite`    | `^4.3.2`   | latest `^4.x`         |
+| `playwright`           | `^1.61.1`  | latest                |
+| `react`                | `^19.2.7`  | latest `^19.x`        |
+| `react-dom`            | `^19.2.7`  | latest `^19.x`        |
 
 No dependency changes for `core` or `cli` packages.
 
 ### 2. TypeScript Config
 
 **`tsconfig.base.json`:**
+
 - `target`: `ES2022` → `ES2026`
 - `lib`: `["ES2022", "DOM"]` → `["ES2026", "DOM"]`
 - `module`: stays `ESNext`

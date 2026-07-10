@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type DragEventHandler, type ReactElement } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEventHandler,
+  type ReactElement,
+} from 'react';
 
 import type { GenerateResult, PreviewResult } from '../../../env';
 import {
@@ -143,7 +150,16 @@ function EmptyProjects({
 
 type FileListTab = 'included' | 'skipped' | 'ignored' | 'warnings';
 
-function FileListSheet({
+const focusableSelector = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'a[href]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+export function FileListSheet({
   open,
   preview,
   initialTab,
@@ -156,6 +172,7 @@ function FileListSheet({
 }): ReactElement | null {
   const [activeTab, setActiveTab] = useState<FileListTab>(initialTab);
   const [query, setQuery] = useState('');
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -163,6 +180,54 @@ function FileListSheet({
       setQuery('');
     }
   }, [initialTab, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+
+    const focusableElements = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
+    (focusableElements[0] ?? dialog).focus();
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const elements = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector));
+      if (elements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === first || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, open]);
 
   const tabs: Array<{ id: FileListTab; label: string; count: number }> = [
     { id: 'included', label: 'Included', count: preview?.includedFiles.length ?? 0 },
@@ -218,10 +283,13 @@ function FileListSheet({
   return (
     <div className="absolute inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px]">
       <aside
+        ref={dialogRef}
         aria-label="File inspection"
         aria-modal="true"
         className="flex h-full w-full max-w-[760px] flex-col overflow-hidden border-l border-line bg-window shadow-window"
+        data-testid="file-inspection-dialog"
         role="dialog"
+        tabIndex={-1}
       >
         <div className="shrink-0 flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <div>
@@ -419,19 +487,17 @@ function PipelinePanel({
   phase,
   progressCounts,
   preview,
-  generated,
 }: {
   busy: boolean;
   phase: string;
   progressCounts: { processed?: number; total?: number };
   preview: PreviewResult | null;
-  generated: GenerateResult | null;
 }): ReactElement {
   const total = progressCounts.total ?? preview?.includedFiles.length ?? 0;
   const processed = progressCounts.processed ?? 0;
   const progress = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
 
-  if (!busy && generated) {
+  if (!busy) {
     return <></>;
   }
 
@@ -440,23 +506,21 @@ function PipelinePanel({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-[14px] font-semibold text-ink">Pipeline</h2>
-          <p className="mt-0.5 text-[12px] text-muted">
-            {phase || (generated ? 'Generated' : preview ? 'Ready' : 'Waiting')}
-          </p>
+          <p className="mt-0.5 text-[12px] text-muted">{phase || 'Working'}</p>
         </div>
         <span
           className={cn(
             'rounded-[7px] px-2 py-1 text-[11px] font-medium',
-            busy ? 'bg-warning-soft text-warning-strong' : 'bg-success-soft text-success-strong',
+            'bg-warning-soft text-warning-strong',
           )}
         >
-          {busy ? 'Running' : 'Idle'}
+          Running
         </span>
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/[0.06]">
         <div
           className="h-full rounded-full bg-accent transition-all"
-          style={{ width: `${busy ? Math.max(progress, 8) : generated ? 100 : 0}%` }}
+          style={{ width: `${Math.max(progress, 8)}%` }}
         />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-[12px] text-muted">
@@ -465,15 +529,11 @@ function PipelinePanel({
           <div>Preview</div>
         </div>
         <div className="rounded-[8px] bg-black/[0.035] p-2">
-          <div className="font-medium text-ink">
-            {busy ? `${processed}/${total || '-'}` : generated ? 'Complete' : 'Idle'}
-          </div>
+          <div className="font-medium text-ink">{`${processed}/${total || '-'}`}</div>
           <div>Generate</div>
         </div>
         <div className="rounded-[8px] bg-black/[0.035] p-2">
-          <div className="font-medium text-ink">
-            {generated ? formatBytes(generated.outputBytes) : '-'}
-          </div>
+          <div className="font-medium text-ink">Preparing</div>
           <div>Generated output</div>
         </div>
       </div>
@@ -630,7 +690,6 @@ function ProjectsView(props: WorkspaceProps): ReactElement {
         />
         <PipelinePanel
           busy={props.busy}
-          generated={props.generated}
           phase={props.phase}
           preview={props.preview}
           progressCounts={props.progressCounts}

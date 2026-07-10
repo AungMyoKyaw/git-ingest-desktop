@@ -89,16 +89,18 @@ export function AppChrome({
             Save
           </Button>
         ) : null}
-        <Button
-          aria-busy={primaryAction.kind === 'cancel'}
-          disabled={primaryAction.disabled}
-          leftIcon={primaryIcon}
-          onClick={primaryHandler}
-          size="sm"
-          variant={primaryAction.kind === 'cancel' ? 'danger' : 'primary'}
-        >
-          {primaryAction.label}
-        </Button>
+        {!hasOutput ? (
+          <Button
+            aria-busy={primaryAction.kind === 'cancel'}
+            disabled={primaryAction.disabled}
+            leftIcon={primaryIcon}
+            onClick={primaryHandler}
+            size="sm"
+            variant={primaryAction.kind === 'cancel' ? 'danger' : 'primary'}
+          >
+            {primaryAction.label}
+          </Button>
+        ) : null}
         <Button
           aria-expanded={inspectorOpen}
           aria-label="Toggle inspector"

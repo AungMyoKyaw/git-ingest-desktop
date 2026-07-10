@@ -32,10 +32,10 @@ Git-Ingest scans a codebase, applies ignore and size rules, previews what will b
 
 This is a Bun monorepo with two packages:
 
-| Package               | Purpose                                                                         |
-| --------------------- | ------------------------------------------------------------------------------- |
+| Package               | Purpose                                                                            |
+| --------------------- | ---------------------------------------------------------------------------------- |
 | `@git-ingest/core`    | Shared project scanning, ignore handling, token estimation, and output generation. |
-| `@git-ingest/desktop` | Secure Electron desktop app built with Electron, React, and electron-vite.      |
+| `@git-ingest/desktop` | Secure Electron desktop app built with Electron, React, and electron-vite.         |
 
 ## ✅ Requirements
 
@@ -104,6 +104,26 @@ Choose Folder → Preview → Generate → Copy or Save
 ```
 
 Preview is the confidence step. It shows what Git-Ingest plans to include before output is generated, so large folders, ignored files, binary files, and size limits are visible before anything is copied or saved.
+
+## 🖥️ Product Screenshots
+
+The desktop workflow in four steps:
+
+<p align="center">
+  <img src="assets/screenshots/project-folder-picker.png" alt="Git-Ingest project folder picker" width="49%" />
+  <img src="assets/screenshots/project-preview-summary.png" alt="Git-Ingest preview summary for a local project" width="49%" />
+</p>
+<p align="center">
+  <em>Choose a project folder, then review the files and token estimate before generating.</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/generated-output-preview.png" alt="Git-Ingest generated Markdown output preview" width="49%" />
+  <img src="assets/screenshots/saved-export-confirmation.png" alt="Git-Ingest saved export confirmation" width="49%" />
+</p>
+<p align="center">
+  <em>Generate AI-readable output, copy it, or save it locally for the next coding workflow.</em>
+</p>
 
 ## 📄 License
 

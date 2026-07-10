@@ -448,6 +448,43 @@
         background: #fff;
       }
 
+      .workflow-gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 22px;
+      }
+
+      .workflow-shot {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(16, 22, 36, 0.07);
+      }
+
+      .workflow-shot img {
+        width: 100%;
+        aspect-ratio: 2784 / 1944;
+        object-fit: cover;
+        object-position: top center;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .workflow-shot figcaption {
+        padding: 16px 18px 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .workflow-shot strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
+        font-size: 16px;
+      }
+
       .step {
         display: inline-flex;
         width: 32px;
@@ -641,6 +678,7 @@
         .feature-grid,
         .security-grid,
         .workflow-grid,
+        .workflow-gallery,
         .metric-row {
           grid-template-columns: 1fr;
         }
@@ -941,6 +979,53 @@
                   <h3>Copy or export</h3>
                   <p>Paste into ChatGPT, Claude, Gemini, coding agents, or your own tools.</p>
                 </article>
+              </div>
+
+              <div class="workflow-gallery" aria-label="Git-Ingest desktop workflow screenshots">
+                <figure class="workflow-shot">
+                  <img
+                    src="assets/screenshots/project-folder-picker.png"
+                    alt="Git-Ingest project screen prompting the user to choose a local folder"
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    <strong>1. Choose a project</strong>
+                    Start with a local repository and keep the source files on your machine.
+                  </figcaption>
+                </figure>
+                <figure class="workflow-shot">
+                  <img
+                    src="assets/screenshots/project-preview-summary.png"
+                    alt="Git-Ingest preview screen showing included files, skipped files, tokens, and output estimate"
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    <strong>2. Preview the bundle</strong>
+                    See exactly what will be included, skipped, or ignored before generation.
+                  </figcaption>
+                </figure>
+                <figure class="workflow-shot">
+                  <img
+                    src="assets/screenshots/generated-output-preview.png"
+                    alt="Git-Ingest generated output screen showing Markdown project context"
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    <strong>3. Generate context</strong>
+                    Produce a portable Markdown or text bundle ready for AI-assisted development.
+                  </figcaption>
+                </figure>
+                <figure class="workflow-shot">
+                  <img
+                    src="assets/screenshots/saved-export-confirmation.png"
+                    alt="Git-Ingest export screen confirming that the generated output was saved"
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    <strong>4. Copy or save</strong>
+                    Move the finished context into your next coding workflow with one action.
+                  </figcaption>
+                </figure>
               </div>
             </div>
           </div>
