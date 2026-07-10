@@ -12,15 +12,14 @@
   },
   "scripts": {
     "dev": "bun run dev:desktop",
-    "build": "bun run --filter @git-ingest/core build && bun run --filter @git-ingest/cli build && bun run --filter @git-ingest/desktop build",
-    "test": "bun run --filter @git-ingest/core test && bun run --filter @git-ingest/cli test && bun run --filter @git-ingest/desktop test",
+    "build": "bun run --filter @git-ingest/core build && bun run --filter @git-ingest/desktop build",
+    "test": "bun run --filter @git-ingest/core test && bun run --filter @git-ingest/desktop test",
     "test:smoke": "bun run --filter @git-ingest/desktop test:smoke",
     "dev:desktop": "bun run --filter @git-ingest/desktop dev",
     "build:desktop": "bun run --filter @git-ingest/desktop build",
     "package:desktop": "bun run --filter @git-ingest/desktop package",
     "ci:test": "bun run test && bun run test:smoke && bun run build",
     "ci:package:desktop": "bun run package:desktop",
-    "build:cli": "bun run --filter @git-ingest/cli build",
     "format": "prettier --write --ignore-unknown '**/*.{ts,tsx,js,jsx,json,css,md}'",
     "postinstall": "node packages/desktop/node_modules/electron/install.js 2>/dev/null || true"
   },
