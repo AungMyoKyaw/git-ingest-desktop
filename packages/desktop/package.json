@@ -1,6 +1,6 @@
 {
   "name": "@git-ingest/desktop",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Secure Electron desktop app for Git-Ingest",
   "author": "Aung Myo Kyaw <AungMyoKyaw@users.noreply.github.com>",
   "homepage": "https://github.com/AungMyoKyaw/git-ingest-desktop",
