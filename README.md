@@ -62,6 +62,22 @@ This is a Bun monorepo with two packages:
 - Node.js `>=22.12.0`
 - Bun `>=1.1.0`
 
+## 🍺 Install on macOS with Homebrew
+
+First-time installation:
+
+```bash
+brew tap AungMyoKyaw/homebrew-tap
+brew install --cask AungMyoKyaw/homebrew-tap/git-ingest
+```
+
+Upgrade an existing installation:
+
+```bash
+brew update
+brew upgrade --cask AungMyoKyaw/homebrew-tap/git-ingest
+```
+
 ## 🚀 Quick Start
 
 ```bash
