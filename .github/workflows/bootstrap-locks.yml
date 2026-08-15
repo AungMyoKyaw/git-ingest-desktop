@@ -1,24 +1,47 @@
-name: export-locks
+name: apply-rewrite-patch
 
 on:
   push:
     branches:
       - feat/tauri-svelte-rewrite
+    paths:
+      - .rewrite-patch/READY
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  locks:
-    if: github.actor != 'github-actions[bot]'
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/upload-artifact@v6
         with:
-          name: rewrite-lockfiles
-          path: |
-            bun.lock
-            src-tauri/Cargo.lock
-          if-no-files-found: error
-          retention-days: 1
+          fetch-depth: 0
+      - name: Preserve patch payload
+        run: cat .rewrite-patch/part-* > /tmp/rewrite.patch.gz.b64
+      - name: Reset to master and apply exact rewrite
+        run: |
+          git fetch origin master
+          git reset --hard origin/master
+          base64 --decode /tmp/rewrite.patch.gz.b64 | gunzip > /tmp/rewrite.patch
+          git apply --binary /tmp/rewrite.patch
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          components: rustfmt,clippy
+      - name: Refresh lockfiles and format
+        run: |
+          rm -f bun.lock Cargo.lock
+          bun install
+          cargo generate-lockfile
+          bun run format
+      - name: Commit exact rewrite
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: rebuild Git-Ingest with Tauri and Svelte'
+          git push --force origin HEAD:feat/tauri-svelte-rewrite
