@@ -1,0 +1,34 @@
+name: bootstrap-locks
+
+on:
+  push:
+    branches:
+      - feat/tauri-svelte-rewrite
+
+permissions:
+  contents: write
+
+jobs:
+  locks:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - name: Generate lockfiles
+        run: |
+          rm -f bun.lock src-tauri/Cargo.lock
+          bun install --lockfile-only
+          cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+      - name: Commit lockfiles
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add bun.lock src-tauri/Cargo.lock
+          git commit -m 'chore: generate Tauri rewrite lockfiles'
+          git push

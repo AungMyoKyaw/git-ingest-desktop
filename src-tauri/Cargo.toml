@@ -1,0 +1,29 @@
+[package]
+name = "git-ingest"
+version = "1.0.0"
+description = "Local-first desktop context builder for AI coding workflows"
+authors = ["Aung Myo Kyaw"]
+edition = "2024"
+rust-version = "1.97.1"
+license = "MIT"
+
+[lib]
+name = "git_ingest_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = "2"
+
+[dependencies]
+globset = "0.4"
+ignore = "0.4"
+notify = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = "=2.11.5"
+tauri-plugin-clipboard-manager = "2.3.2"
+tauri-plugin-dialog = "2.7.2"
+tauri-plugin-opener = "2.5.4"
+
+[dev-dependencies]
+tempfile = "3"
