@@ -1,0 +1,61 @@
+name: frontend-diagnostics
+
+on:
+  push:
+    branches:
+      - rewrite/tauri-svelte-v1-recovered
+    paths:
+      - .github/workflows/frontend-diagnostics.yml
+      - src/**
+      - package.json
+      - vitest.config.ts
+      - vite.config.ts
+      - eslint.config.js
+
+permissions:
+  contents: write
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Run frontend gates
+        id: gates
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          : > frontend.log
+          status=0
+          for cmd in \
+            'bunx eslint . --max-warnings 0' \
+            'bun run typecheck' \
+            'bun run test:skips' \
+            'bun run test:frontend' \
+            'bun run build'
+          do
+            echo "===== $cmd =====" | tee -a frontend.log
+            bash -lc "$cmd" >> frontend.log 2>&1
+            code=$?
+            echo "exit=$code" | tee -a frontend.log
+            if [ "$code" -ne 0 ]; then status=$code; fi
+          done
+          exit "$status"
+      - name: Persist frontend diagnostics
+        run: |
+          mkdir -p .diagnostics
+          cp frontend.log .diagnostics/frontend.log
+          printf '%s\n' '${{ steps.gates.outcome }}' > .diagnostics/frontend-status.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .diagnostics/frontend.log .diagnostics/frontend-status.txt
+          git commit -m 'ci: persist frontend diagnostics' || true
+          git push
+      - name: Preserve gate failure
+        if: steps.gates.outcome == 'failure'
+        run: exit 1
