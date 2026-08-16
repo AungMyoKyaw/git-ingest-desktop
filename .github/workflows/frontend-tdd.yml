@@ -8,12 +8,14 @@ on:
       - .github/workflows/frontend-tdd.yml
       - vitest.config.ts
       - src/live-refresh.test.ts
+      - src/App.svelte
+      - src/lib/components/RulesView.svelte
 
 permissions:
   contents: read
 
 jobs:
-  live-refresh-red:
+  live-refresh:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
