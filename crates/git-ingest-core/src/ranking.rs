@@ -64,7 +64,7 @@ pub fn apply_budget(entries: &mut [FileEntry], budget: Option<u64>) {
             )
             .then(entries[*a].path.cmp(&entries[*b].path))
     });
-    let mut used = 0;
+    let mut used: u64 = 0;
     for i in order {
         let cost = entries[i].estimated_tokens;
         if entries[i].pinned || used.saturating_add(cost) <= budget {
