@@ -1,6 +1,7 @@
 <script lang="ts">
   import { WORKFLOW_PRESETS, formatPatterns, parsePatterns } from "../model";
   import type { OutputFormat, SavedProfile } from "../types";
+
   let {
     includePatterns,
     excludePatterns,
@@ -9,10 +10,12 @@
     format,
     selectedPreset,
     profiles,
+    liveRefresh,
     onchange,
     onpreset,
     onsaveprofile,
-    onapplyprofile
+    onapplyprofile,
+    onliverefresh
   }: {
     includePatterns: string[];
     excludePatterns: string[];
@@ -21,6 +24,7 @@
     format: OutputFormat;
     selectedPreset: string;
     profiles: SavedProfile[];
+    liveRefresh: boolean;
     onchange: (v: {
       includePatterns?: string[];
       excludePatterns?: string[];
@@ -31,7 +35,9 @@
     onpreset: (id: string) => void;
     onsaveprofile: (name: string) => void;
     onapplyprofile: (p: SavedProfile) => void;
+    onliverefresh: (enabled: boolean) => void;
   } = $props();
+
   let profileName = $state("");
 </script>
 
@@ -45,67 +51,91 @@
       </p>
     </div>
   </div>
+
   <div class="settings-grid">
     <div class="settings-card">
       <h2>Workflow preset</h2>
       <div class="preset-grid">
-        {#each WORKFLOW_PRESETS as preset}<button
-            class:active={selectedPreset === preset.id}
-            onclick={() => onpreset(preset.id)}
-            ><strong>{preset.label}</strong><span>{preset.description}</span></button
-          >{/each}
+        {#each WORKFLOW_PRESETS as preset}
+          <button class:active={selectedPreset === preset.id} onclick={() => onpreset(preset.id)}>
+            <strong>{preset.label}</strong><span>{preset.description}</span>
+          </button>
+        {/each}
       </div>
     </div>
+
     <div class="settings-card">
       <h2>Context budget</h2>
-      <label
-        >Token budget<input
+      <label>
+        Token budget
+        <input
           type="number"
           min="0"
           value={tokenBudget ?? ""}
           oninput={(e) =>
             onchange({ tokenBudget: e.currentTarget.value ? Number(e.currentTarget.value) : null })}
-        /></label
-      ><label
-        >Max file size (bytes)<input
+        />
+      </label>
+      <label>
+        Max file size (bytes)
+        <input
           type="number"
           min="1"
           value={maxFileSizeBytes}
           oninput={(e) => onchange({ maxFileSizeBytes: Number(e.currentTarget.value) })}
-        /></label
-      ><label
-        >Output format<select
+        />
+      </label>
+      <label>
+        Output format
+        <select
           value={format}
           onchange={(e) => onchange({ format: e.currentTarget.value as OutputFormat })}
-          ><option value="markdown">Markdown</option><option value="text">Plain text</option
-          ></select
-        ></label
-      >
+        >
+          <option value="markdown">Markdown</option>
+          <option value="text">Plain text</option>
+        </select>
+      </label>
+      <label class="toggle-row">
+        <input
+          type="checkbox"
+          aria-label="Live refresh"
+          checked={liveRefresh}
+          onchange={(e) => onliverefresh(e.currentTarget.checked)}
+        />
+        <span>
+          <strong>Live refresh</strong>
+          <small>Watch the open project and refresh context after local file changes.</small>
+        </span>
+      </label>
     </div>
+
     <div class="settings-card">
       <h2>Path rules</h2>
-      <label
-        >Include patterns<textarea
+      <label>
+        Include patterns
+        <textarea
           rows="7"
           value={formatPatterns(includePatterns)}
           oninput={(e) => onchange({ includePatterns: parsePatterns(e.currentTarget.value) })}
-          placeholder="src/**"></textarea></label
-      ><label
-        >Exclude patterns<textarea
+          placeholder="src/**"
+        ></textarea>
+      </label>
+      <label>
+        Exclude patterns
+        <textarea
           rows="7"
           value={formatPatterns(excludePatterns)}
           oninput={(e) => onchange({ excludePatterns: parsePatterns(e.currentTarget.value) })}
-          placeholder="**/generated/**"></textarea></label
-      >
+          placeholder="**/generated/**"
+        ></textarea>
+      </label>
     </div>
+
     <div class="settings-card">
       <h2>Saved profiles</h2>
       <div class="save-profile">
-        <input
-          aria-label="Profile name"
-          placeholder="Profile name"
-          bind:value={profileName}
-        /><button
+        <input aria-label="Profile name" placeholder="Profile name" bind:value={profileName} />
+        <button
           onclick={() => {
             if (profileName.trim()) {
               onsaveprofile(profileName.trim());
@@ -114,14 +144,17 @@
           }}>Save current</button
         >
       </div>
-      {#if profiles.length}<div class="profile-list">
-          {#each profiles as profile}<button onclick={() => onapplyprofile(profile)}
-              ><strong>{profile.name}</strong><span>{profile.tokenBudget ?? "No"} token budget</span
-              ></button
-            >{/each}
-        </div>{:else}<p class="muted">
-          Save reusable rules for recurring repositories or agents.
-        </p>{/if}
+      {#if profiles.length}
+        <div class="profile-list">
+          {#each profiles as profile}
+            <button onclick={() => onapplyprofile(profile)}>
+              <strong>{profile.name}</strong><span>{profile.tokenBudget ?? "No"} token budget</span>
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <p class="muted">Save reusable rules for recurring repositories or agents.</p>
+      {/if}
     </div>
   </div>
 </section>
