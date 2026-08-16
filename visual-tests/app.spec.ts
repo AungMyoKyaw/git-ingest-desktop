@@ -14,7 +14,8 @@ test("captures normal context workspace", async ({ page }) => {
   const appFile = page.getByRole("button", { name: /src\/App\.svelte/ });
   await expect(appFile).toBeVisible();
   await appFile.click();
-  await expect(page.locator(".preview-pane pre").last()).toContainText("focused local context");
+  await expect(page.locator(".preview-header strong")).toHaveText("src/App.svelte");
+  await expect(page.locator(".preview-pane pre").last()).toContainText("createNativeClient");
   await page.screenshot({ path: `${shots}/v1-context-1180x760.png`, fullPage: true });
 });
 
