@@ -6,6 +6,8 @@ on:
       - rewrite/tauri-svelte-v1-recovered
     paths:
       - .github/workflows/frontend-tdd.yml
+      - vitest.config.ts
+      - src/live-refresh.test.ts
 
 permissions:
   contents: read
