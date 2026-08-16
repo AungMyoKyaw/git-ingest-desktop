@@ -102,6 +102,7 @@
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => void refresh(), 220);
   }
+
   async function persist(next = state) {
     state = next;
     try {
@@ -110,10 +111,12 @@
       error = normalizeError(e);
     }
   }
+
   async function chooseProject() {
     const path = await client.chooseProject();
     if (path) await openProject(path);
   }
+
   async function openProject(path: string) {
     rootPath = path;
     generation = null;
@@ -126,6 +129,7 @@
     await updateWatch();
     await refresh();
   }
+
   async function refresh() {
     if (!rootPath) return;
     busy = true;
@@ -139,6 +143,7 @@
       busy = false;
     }
   }
+
   async function selectEntry(entry: FileEntry) {
     selectedPath = entry.path;
     preview = "";
@@ -153,12 +158,15 @@
       error = normalizeError(e);
     }
   }
+
   function changeIncluded(entry: FileEntry) {
     overrides = toggleIncluded(overrides, entry);
   }
+
   function changePin(entry: FileEntry) {
     overrides = togglePin(overrides, entry);
   }
+
   async function generateContext() {
     if (!rootPath) {
       workspace = "project";
@@ -176,6 +184,7 @@
       busy = false;
     }
   }
+
   async function copyOutput() {
     if (!generation) return;
     try {
@@ -184,6 +193,7 @@
       error = normalizeError(e);
     }
   }
+
   async function saveOutput() {
     if (!generation) return;
     try {
@@ -193,22 +203,25 @@
       error = normalizeError(e);
     }
   }
+
   async function openSaved() {
-    if (state.lastExportPath)
-      try {
-        await client.openOutput(state.lastExportPath);
-      } catch (e) {
-        error = normalizeError(e);
-      }
+    if (!state.lastExportPath) return;
+    try {
+      await client.openOutput(state.lastExportPath);
+    } catch (e) {
+      error = normalizeError(e);
+    }
   }
+
   async function revealSaved() {
-    if (state.lastExportPath)
-      try {
-        await client.revealOutput(state.lastExportPath);
-      } catch (e) {
-        error = normalizeError(e);
-      }
+    if (!state.lastExportPath) return;
+    try {
+      await client.revealOutput(state.lastExportPath);
+    } catch (e) {
+      error = normalizeError(e);
+    }
   }
+
   function changeRules(value: {
     includePatterns?: string[];
     excludePatterns?: string[];
@@ -222,6 +235,7 @@
     if (value.tokenBudget !== undefined) tokenBudget = value.tokenBudget;
     if (value.format) format = value.format;
   }
+
   function applyPreset(id: string) {
     const preset = WORKFLOW_PRESETS.find((v) => v.id === id) ?? WORKFLOW_PRESETS[0];
     includePatterns = [...preset.include];
@@ -229,6 +243,7 @@
     tokenBudget = preset.tokenBudget;
     void persist({ ...state, settings: { ...state.settings, selectedPreset: preset.id } });
   }
+
   function saveProfile(name: string) {
     const profile: SavedProfile = {
       id: crypto.randomUUID(),
@@ -241,6 +256,7 @@
     };
     void persist({ ...state, profiles: upsertProfile(state.profiles, profile) });
   }
+
   function applyProfile(profile: SavedProfile) {
     includePatterns = [...profile.includePatterns];
     excludePatterns = [...profile.excludePatterns];
@@ -248,6 +264,7 @@
     tokenBudget = profile.tokenBudget;
     format = profile.format === "text" ? "text" : "markdown";
   }
+
   async function updateWatch() {
     try {
       await client.stopWatch();
@@ -256,6 +273,12 @@
       error = normalizeError(e);
     }
   }
+
+  async function setLiveRefresh(enabled: boolean) {
+    await persist({ ...state, settings: { ...state.settings, liveRefresh: enabled } });
+    await updateWatch();
+  }
+
   function onKeydown(event: KeyboardEvent) {
     const action = shortcutAction(event);
     if (!action) return;
@@ -275,30 +298,31 @@
 <svelte:window onkeydown={onKeydown} />
 <div class="app-shell" data-appearance={state.settings.appearance}>
   <header class="topbar">
-    <button class="brand" onclick={() => (workspace = "project")} aria-label="Git-Ingest home"
-      ><img src="/assets/icon.png" alt="" /><span>Git-Ingest</span></button
-    >
+    <button class="brand" onclick={() => (workspace = "project")} aria-label="Git-Ingest home">
+      <img src="/assets/icon.png" alt="" /><span>Git-Ingest</span>
+    </button>
     <div class="project-chip">
-      <span class="status-dot"></span><strong>{projectName}</strong
-      >{#if inspection?.git.branch}<span>{inspection.git.branch}</span>{/if}
+      <span class="status-dot"></span><strong>{projectName}</strong>
+      {#if inspection?.git.branch}<span>{inspection.git.branch}</span>{/if}
     </div>
     <div class="top-actions">
-      <button onclick={() => (workspace = "rules")}>Rules</button><button
-        class="primary"
-        disabled={busy}
-        onclick={() => void generateContext()}>Generate</button
-      >
+      <button onclick={() => (workspace = "rules")}>Rules</button>
+      <button class="primary" disabled={busy} onclick={() => void generateContext()}>Generate</button>
     </div>
   </header>
+
   <div class="main-grid">
     <Nav active={workspace} onselect={(value) => (workspace = value)} />
     <main>
-      {#if workspace === "project"}<ProjectView
+      {#if workspace === "project"}
+        <ProjectView
           {rootPath}
           recentProjects={state.recentProjects}
           onchoose={() => void chooseProject()}
           onopen={(path) => void openProject(path)}
-        />{:else if workspace === "context"}<ContextView
+        />
+      {:else if workspace === "context"}
+        <ContextView
           {inspection}
           {selectedPath}
           {preview}
@@ -311,7 +335,9 @@
           onselect={(entry) => void selectEntry(entry)}
           ontoggle={changeIncluded}
           ontogglepin={changePin}
-        />{:else if workspace === "rules"}<RulesView
+        />
+      {:else if workspace === "rules"}
+        <RulesView
           {includePatterns}
           {excludePatterns}
           {maxFileSizeBytes}
@@ -319,11 +345,15 @@
           {format}
           selectedPreset={state.settings.selectedPreset}
           profiles={state.profiles}
+          liveRefresh={state.settings.liveRefresh}
           onchange={changeRules}
           onpreset={applyPreset}
           onsaveprofile={saveProfile}
           onapplyprofile={applyProfile}
-        />{:else}<OutputView
+          onliverefresh={(enabled) => void setLiveRefresh(enabled)}
+        />
+      {:else}
+        <OutputView
           {generation}
           lastExportPath={state.lastExportPath}
           {busy}
@@ -333,8 +363,10 @@
           onsave={() => void saveOutput()}
           onopen={() => void openSaved()}
           onreveal={() => void revealSaved()}
-        />{/if}
+        />
+      {/if}
     </main>
   </div>
+
   <StatusBar {inspection} liveRefresh={state.settings.liveRefresh} />
 </div>
