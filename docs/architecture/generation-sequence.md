@@ -1,4 +1,5 @@
 # Generation Sequence
+
 ```mermaid
 sequenceDiagram
   actor U as User

@@ -7,5 +7,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strict,
   ...svelte.configs["flat/recommended"],
-  { languageOptions: { globals: { ...globals.browser, ...globals.node } }, rules: { "@typescript-eslint/no-explicit-any": "error", "@typescript-eslint/no-non-null-assertion": "error", "no-console": ["error", { allow: ["warn", "error"] }] } }
+  {
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-non-null-assertion": "error",
+      "no-console": ["error", { allow: ["warn", "error"] }]
+    }
+  }
 );

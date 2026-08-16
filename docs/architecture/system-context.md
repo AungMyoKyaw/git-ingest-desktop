@@ -1,4 +1,5 @@
 # System Context
+
 ```mermaid
 flowchart LR
   User[Developer] --> UI[Svelte 5 WebView]
@@ -9,4 +10,5 @@ flowchart LR
   Boundary --> State[(App config JSON)]
   Boundary --> Export[(User-selected .md/.txt export)]
 ```
+
 The renderer has no arbitrary filesystem or shell permission. Local repository data is not sent to a remote service.

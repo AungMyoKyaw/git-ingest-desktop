@@ -1,4 +1,5 @@
 # Module Architecture
+
 ```mermaid
 flowchart TB
   App[App.svelte] --> Model[src/lib/model.ts]

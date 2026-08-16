@@ -36,6 +36,7 @@ If a feature branch (e.g. `feat/desktop-mvp-alignment`) has unmerged commits, as
 "Should I merge [branch] into master first before releasing?"
 
 If yes:
+
 ```bash
 git merge <branch>
 git push origin master
@@ -44,6 +45,7 @@ git push origin master
 ### 3. Bump version in 3 files
 
 All 3 must stay in sync:
+
 - `package.json` (root workspace)
 - `packages/core/package.json`
 - `packages/desktop/package.json`

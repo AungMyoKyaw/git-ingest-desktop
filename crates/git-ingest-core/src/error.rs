@@ -8,7 +8,11 @@ pub enum CoreError {
     #[error("project root is not a directory: {0}")]
     NotDirectory(String),
     #[error("I/O error at {path}: {source}")]
-    Io { path: String, #[source] source: std::io::Error },
+    Io {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
     #[error("invalid glob pattern `{pattern}`: {message}")]
     InvalidPattern { pattern: String, message: String },
     #[error("invalid project path: {0}")]
@@ -18,5 +22,8 @@ pub enum CoreError {
 pub type Result<T> = std::result::Result<T, CoreError>;
 
 pub(crate) fn io(path: &Path, source: std::io::Error) -> CoreError {
-    CoreError::Io { path: path.display().to_string(), source }
+    CoreError::Io {
+        path: path.display().to_string(),
+        source,
+    }
 }

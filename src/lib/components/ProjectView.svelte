@@ -1,5 +1,10 @@
 <script lang="ts">
-  let { rootPath, recentProjects, onchoose, onopen }: {
+  let {
+    rootPath,
+    recentProjects,
+    onchoose,
+    onopen
+  }: {
     rootPath: string;
     recentProjects: string[];
     onchoose: () => void;
@@ -24,7 +29,10 @@
   {#if rootPath}
     <div class="hero-card">
       <span class="status-dot"></span>
-      <div><strong>Current project</strong><p>{rootPath}</p></div>
+      <div>
+        <strong>Current project</strong>
+        <p>{rootPath}</p>
+      </div>
     </div>
   {:else}
     <div class="empty">

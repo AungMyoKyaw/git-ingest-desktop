@@ -10,16 +10,20 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{
-      "title": "Git-Ingest",
-      "width": 1180,
-      "height": 760,
-      "minWidth": 720,
-      "minHeight": 520,
-      "resizable": true,
-      "dragDropEnabled": true
-    }],
-    "security": { "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'" }
+    "windows": [
+      {
+        "title": "Git-Ingest",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 720,
+        "minHeight": 520,
+        "resizable": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
   },
   "bundle": {
     "active": true,

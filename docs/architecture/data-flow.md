@@ -1,4 +1,5 @@
 # Context Data Flow
+
 ```mermaid
 flowchart LR
   Folder[Selected folder] --> Validate[Canonicalize root]

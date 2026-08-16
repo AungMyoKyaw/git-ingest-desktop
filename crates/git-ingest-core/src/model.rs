@@ -43,7 +43,9 @@ pub struct InspectRequest {
     pub overrides: Vec<FileOverride>,
 }
 
-fn default_max_file_size() -> u64 { DEFAULT_MAX_FILE_SIZE_BYTES }
+fn default_max_file_size() -> u64 {
+    DEFAULT_MAX_FILE_SIZE_BYTES
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]

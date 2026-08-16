@@ -1,10 +1,101 @@
 import { defaultPersistedState } from "./lib/model";
 import type { GenerationResult, InspectionResult, NativeClient } from "./lib/types";
-const inspection:InspectionResult={rootPath:"/Users/demo/git-ingest",projectName:"git-ingest",git:{available:true,branch:"rewrite/tauri-svelte-v1"},entries:[
-{path:"src/App.svelte",sizeBytes:8124,language:"Svelte",estimatedTokens:2031,included:true,pinned:true,skipReason:null,gitStatus:"M",dependencies:["./lib/native","./lib/model"],relevanceScore:1110,relevanceReasons:["pinned by user","changed in Git","source file"]},
-{path:"crates/git-ingest-core/src/scan.rs",sizeBytes:9460,language:"Rust",estimatedTokens:2365,included:true,pinned:false,skipReason:null,gitStatus:"M",dependencies:["model","ranking"],relevanceScore:110,relevanceReasons:["changed in Git","source file"]},
-{path:"README.md",sizeBytes:6800,language:"Markdown",estimatedTokens:1700,included:true,pinned:false,skipReason:null,gitStatus:null,dependencies:[],relevanceScore:53,relevanceReasons:["project entry point","documentation"]},
-{path:"dist/app.js",sizeBytes:240000,language:"JavaScript",estimatedTokens:0,included:false,pinned:false,skipReason:"generated or dependency directory",gitStatus:null,dependencies:[],relevanceScore:30,relevanceReasons:["source file"]}
-],ignoredDirectories:[{path:"node_modules",reason:"generated or dependency directory"}],includedFiles:3,skippedFiles:1,totalBytes:24384,estimatedTokens:6096,budgetTokens:60000};
-const generation:GenerationResult={output:"# Repository Context\n\nProject: `git-ingest`\n\n## src/App.svelte\n\n```svelte\n<script lang=\"ts\">\n  // focused local context\n</script>\n```",format:"markdown",includedFiles:3,skippedFiles:1,totalBytes:24384,approximateTokens:6150};
-export function createDemoClient():NativeClient{return{chooseProject:async()=>"/Users/demo/git-ingest",inspect:async()=>inspection,preview:async(_root,path)=>path.endsWith("scan.rs")?"pub fn inspect(request: &InspectRequest) -> Result<InspectionResult> {\n    // validate, scan, rank and budget\n}":"<script lang=\"ts\">\n  import { createNativeClient } from \"./lib/native\";\n</script>",diff:async()=>"@@ -1,2 +1,3 @@\n+ local-first context ranking",generate:async()=>generation,loadState:async()=>({...defaultPersistedState(),recentProjects:["/Users/demo/git-ingest","/Users/demo/dhamma-player"]}),saveState:async()=>{},copyOutput:async()=>{},saveOutput:async()=>"/Users/demo/Desktop/git-ingest-context.md",openOutput:async()=>{},revealOutput:async()=>{},startWatch:async()=>{},stopWatch:async()=>{},onProjectChanged:async()=>()=>{},onProjectDrop:async()=>()=>{}};}
+const inspection: InspectionResult = {
+  rootPath: "/Users/demo/git-ingest",
+  projectName: "git-ingest",
+  git: { available: true, branch: "rewrite/tauri-svelte-v1" },
+  entries: [
+    {
+      path: "src/App.svelte",
+      sizeBytes: 8124,
+      language: "Svelte",
+      estimatedTokens: 2031,
+      included: true,
+      pinned: true,
+      skipReason: null,
+      gitStatus: "M",
+      dependencies: ["./lib/native", "./lib/model"],
+      relevanceScore: 1110,
+      relevanceReasons: ["pinned by user", "changed in Git", "source file"]
+    },
+    {
+      path: "crates/git-ingest-core/src/scan.rs",
+      sizeBytes: 9460,
+      language: "Rust",
+      estimatedTokens: 2365,
+      included: true,
+      pinned: false,
+      skipReason: null,
+      gitStatus: "M",
+      dependencies: ["model", "ranking"],
+      relevanceScore: 110,
+      relevanceReasons: ["changed in Git", "source file"]
+    },
+    {
+      path: "README.md",
+      sizeBytes: 6800,
+      language: "Markdown",
+      estimatedTokens: 1700,
+      included: true,
+      pinned: false,
+      skipReason: null,
+      gitStatus: null,
+      dependencies: [],
+      relevanceScore: 53,
+      relevanceReasons: ["project entry point", "documentation"]
+    },
+    {
+      path: "dist/app.js",
+      sizeBytes: 240000,
+      language: "JavaScript",
+      estimatedTokens: 0,
+      included: false,
+      pinned: false,
+      skipReason: "generated or dependency directory",
+      gitStatus: null,
+      dependencies: [],
+      relevanceScore: 30,
+      relevanceReasons: ["source file"]
+    }
+  ],
+  ignoredDirectories: [{ path: "node_modules", reason: "generated or dependency directory" }],
+  includedFiles: 3,
+  skippedFiles: 1,
+  totalBytes: 24384,
+  estimatedTokens: 6096,
+  budgetTokens: 60000
+};
+const generation: GenerationResult = {
+  output:
+    '# Repository Context\n\nProject: `git-ingest`\n\n## src/App.svelte\n\n```svelte\n<script lang="ts">\n  // focused local context\n</script>\n```',
+  format: "markdown",
+  includedFiles: 3,
+  skippedFiles: 1,
+  totalBytes: 24384,
+  approximateTokens: 6150
+};
+export function createDemoClient(): NativeClient {
+  return {
+    chooseProject: async () => "/Users/demo/git-ingest",
+    inspect: async () => inspection,
+    preview: async (_root, path) =>
+      path.endsWith("scan.rs")
+        ? "pub fn inspect(request: &InspectRequest) -> Result<InspectionResult> {\n    // validate, scan, rank and budget\n}"
+        : '<script lang="ts">\n  import { createNativeClient } from "./lib/native";\n</script>',
+    diff: async () => "@@ -1,2 +1,3 @@\n+ local-first context ranking",
+    generate: async () => generation,
+    loadState: async () => ({
+      ...defaultPersistedState(),
+      recentProjects: ["/Users/demo/git-ingest", "/Users/demo/dhamma-player"]
+    }),
+    saveState: async () => {},
+    copyOutput: async () => {},
+    saveOutput: async () => "/Users/demo/Desktop/git-ingest-context.md",
+    openOutput: async () => {},
+    revealOutput: async () => {},
+    startWatch: async () => {},
+    stopWatch: async () => {},
+    onProjectChanged: async () => () => {},
+    onProjectDrop: async () => () => {}
+  };
+}
