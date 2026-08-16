@@ -1,0 +1,35 @@
+name: format-v1-rewrite
+
+on:
+  push:
+    branches:
+      - rewrite/tauri-svelte-v1-recovered
+    paths:
+      - .github/workflows/format-rewrite.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
+      - run: bun install --frozen-lockfile
+      - name: Run project formatter
+        run: bun run format
+      - name: Commit formatter output
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'style: format Tauri and Svelte rewrite'
+          git push
