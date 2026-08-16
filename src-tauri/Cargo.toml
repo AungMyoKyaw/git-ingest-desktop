@@ -1,0 +1,27 @@
+[package]
+name = "git-ingest-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "git_ingest_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+git-ingest-core = { path = "../crates/git-ingest-core" }
+notify = "8"
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2.11.5", features = [] }
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

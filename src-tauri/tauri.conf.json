@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Git-Ingest",
+  "version": "1.0.0",
+  "identifier": "com.aungmyokyaw.git-ingest",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "Git-Ingest",
+      "width": 1180,
+      "height": 760,
+      "minWidth": 720,
+      "minHeight": 520,
+      "resizable": true,
+      "dragDropEnabled": true
+    }],
+    "security": { "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'" }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "copyright": "Copyright © 2026 Aung Myo Kyaw",
+    "category": "DeveloperTool",
+    "shortDescription": "Turn a local repository into focused LLM context.",
+    "icon": ["../assets/icon.png", "../assets/icon.icns", "../assets/icon.ico"]
+  }
+}
