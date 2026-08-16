@@ -6,6 +6,8 @@ on:
       - rewrite/tauri-svelte-v1-recovered
     paths:
       - .github/workflows/lint-diagnostics.yml
+      - crates/**/*.rs
+      - src-tauri/**/*.rs
 
 permissions:
   contents: read
