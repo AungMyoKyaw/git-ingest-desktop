@@ -37,4 +37,4 @@ jobs:
       - name: Preserve lint failure
         if: steps.lint.outcome == 'failure'
         run: exit 1
-# rerun after typed token-budget fix
+# diagnostic rerun 2
