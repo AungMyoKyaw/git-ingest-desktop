@@ -6,6 +6,10 @@ on:
       - rewrite/tauri-svelte-v1-recovered
     paths:
       - .github/workflows/bootstrap-locks.yml
+      - package.json
+      - Cargo.toml
+      - crates/**/Cargo.toml
+      - src-tauri/Cargo.toml
 
 permissions:
   contents: write
